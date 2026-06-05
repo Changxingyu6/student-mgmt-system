@@ -5,7 +5,7 @@
 from fastapi import APIRouter, Depends
 from deps import get_current_user
 from services import student as student_service
-from scheme.student import StudentCreate, StudentUpdate
+from schema.student import StudentCreate, StudentUpdate
 from utils import format_response
 
 # 创建路由时添加依赖注入，所有接口自动需要认证

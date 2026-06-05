@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 from fastapi import HTTPException, Depends
 from dao import student as student_repo
-from scheme.student import StudentCreate, StudentUpdate, StudentResponse
+from schema.student import StudentCreate, StudentUpdate, StudentResponse
 from database import get_db
 
 

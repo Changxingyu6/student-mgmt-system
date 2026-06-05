@@ -5,7 +5,7 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from model.student import Student
-from scheme.student import StudentCreate, StudentUpdate
+from schema.student import StudentCreate, StudentUpdate
 
 
 def get_students(db: Session, page: int = 1, limit: int = 10) -> List[Student]:
@@ -29,7 +29,7 @@ def create_student(db: Session, student: StudentCreate) -> Student:
     db_student = Student(
         student_no=student.student_no,
         student_name=student.student_name,
-        student_class=student.student_class,
+        student_class=student.student_class,    
         gender=student.gender,
         age=student.age,
         major=student.major,
