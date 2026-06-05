@@ -106,6 +106,21 @@ CREATE TABLE IF NOT EXISTS advisors (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='顾问信息表';
 
+-- 8. 用户表（用于认证登录）
+CREATE TABLE IF NOT EXISTS users (
+    id INT PRIMARY KEY AUTO_INCREMENT COMMENT '用户ID',
+    username VARCHAR(50) UNIQUE NOT NULL COMMENT '用户名',
+    password VARCHAR(32) NOT NULL COMMENT '密码（MD5加密，32位）',
+    salt VARCHAR(32) NOT NULL COMMENT '加密盐值',
+    role VARCHAR(20) NOT NULL COMMENT '角色：admin/teacher/student',
+    related_id INT COMMENT '关联ID（学生ID或教师ID）',
+    is_active TINYINT DEFAULT 1 COMMENT '是否启用：0-禁用，1-启用',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_username (username),
+    INDEX idx_role (role)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户认证表';
+
 -- 插入测试数据
 -- 老师数据
 INSERT INTO teachers (teacher_no, teacher_name, phone, email) VALUES
@@ -149,3 +164,23 @@ INSERT INTO employments (student_id, employment_open_date, offer_date, company_n
 (1, '2024-09-01', '2024-09-15', '字节跳动', 15000.00),
 (2, '2024-09-01', '2024-10-01', '腾讯', 18000.00),
 (3, '2024-09-01', '2024-09-20', '阿里巴巴', 16000.00);
+
+-- 用户认证数据（密码均为：123456）
+-- 密码使用 MD5 加密，加密方式：MD5(salt + password)
+INSERT INTO users (username, password, salt, role, related_id) VALUES
+-- 管理员账户 MD5('abc123' + '123456') = MD5('abc123123456')
+('admin', 'a6f70dedd698be90addd35abe38d3876', 'abc123', 'admin', NULL),
+-- 教师账户（关联老师表ID）
+('teacher1', '163697b928e71fcdac9576a17093b9db', 'def456', 'teacher', 1),
+('teacher2', '66dca3e50d4b0383891fc43001994941', 'ghi789', 'teacher', 2),
+('teacher3', 'e39a0cbe42c2953627e5005617d1c8aa', 'jkl012', 'teacher', 3),
+-- 学生账户（关联学生表ID）
+('student1', '1efa83f749667683f6627045136d1fc1', 'mno345', 'student', 1),
+('student2', '57c789de7f728ea1441da7e514a3ce01', 'pqr678', 'student', 2),
+('student3', 'b08d442c7af32f0da314d89dd1fb1df7', 'stu901', 'student', 3),
+('student4', '0bc80befb3e689e5eb8459d9e3fab9ad', 'vwx234', 'student', 4),
+('student5', '8d0b505debd1a8b0e1b046ec04a70371', 'yzA567', 'student', 5);
+
+-- MD5 加密说明：
+-- 加密算法：MD5(salt + password)
+-- 例如：MD5('abc123' + '123456') = MD5('abc123123456') = 'a6f70dedd698be90addd35abe38d3876'
