@@ -38,5 +38,4 @@ def get_db() -> Generator[Session, None, None]:
     try:
         yield db
     finally:
-        if db.is_connected():
-            db.close()
+        db.close()
