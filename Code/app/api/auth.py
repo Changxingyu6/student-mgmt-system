@@ -2,10 +2,11 @@
 用户认证 API 路由
 包含登录、注册、查看/修改个人信息等接口
 """
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException, status, Form
+from sqlalchemy.orm import Session
 from typing import Optional
 from deps import get_current_user
+from database import get_db
 from services import auth as auth_service
 from utils import format_response
 
@@ -20,10 +21,12 @@ protected_router = APIRouter(prefix="/auth", tags=["用户认证"], dependencies
 
 @public_router.post("/login")
 def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    result = Depends(auth_service.login_for_access_token)
+    username: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
 ):
     """用户登录"""
+    result = auth_service.login_for_access_token(username, password, db)
     return format_response(data=result, message="登录成功")
 
 

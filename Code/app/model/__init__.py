@@ -13,13 +13,13 @@ class BaseModel(Base):
     """
     __abstract__ = True  # 抽象类，不会创建表
     
-    create_dt = Column(
+    created_at = Column(
         DateTime, 
         default=func.now(), 
         nullable=False, 
         comment="创建时间"
     )
-    update_dt = Column(
+    updated_at = Column(
         DateTime, 
         default=func.now(), 
         onupdate=func.now(), 

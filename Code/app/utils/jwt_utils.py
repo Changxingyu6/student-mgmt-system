@@ -24,14 +24,15 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """创建访问令牌"""
     to_encode = data.copy()
+    # 使用 UTC 时间，JWT 标准要求
     if expires_delta:
-        expire = datetime.now() + expires_delta
+        expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.now() + timedelta(minutes=15)
+        expire = datetime.utcnow() + timedelta(minutes=15)
     
     # 添加标准声明
     to_encode.update({
-        "iat": datetime.now(),  # 签发时间
+        "iat": datetime.utcnow(),  # 签发时间（UTC）
         "exp": expire
     })
     

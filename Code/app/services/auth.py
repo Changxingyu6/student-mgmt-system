@@ -27,7 +27,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
 def authenticate_user(
     username: str, 
     password: str, 
-    db: Session = Depends(get_db)
+    db: Session
 ) -> Optional[dict]:
     """验证用户身份"""
     user = user_repo.get_user_by_username(db, username)
@@ -48,7 +48,7 @@ def authenticate_user(
 def login_for_access_token(
     username: str, 
     password: str, 
-    db: Session = Depends(get_db)
+    db: Session
 ) -> dict:
     """用户登录获取token"""
     user = authenticate_user(username, password, db)

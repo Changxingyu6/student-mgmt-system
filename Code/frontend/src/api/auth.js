@@ -7,10 +7,7 @@ export function login(username, password) {
   return request({
     url: '/auth/login',
     method: 'post',
-    data: formData,
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    }
+    data: formData
   })
 }
 

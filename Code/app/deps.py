@@ -34,6 +34,7 @@ def get_current_user(
         )
     
     token = authorization[7:]  # 去掉 "Bearer " 前缀
+    print(f"token:{token}")
     
     # 3. 验证 token 并获取用户信息（使用 Service 层）
     try:

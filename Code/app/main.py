@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api import students_router,auth_public_router,auth_protected_router
+from api import students_router, auth_public_router, auth_protected_router, ai_router
 
 # 创建 FastAPI 实例
 app = FastAPI(
@@ -25,6 +25,7 @@ app.include_router(auth_public_router)
 # 受保护路由（需要认证）
 app.include_router(auth_protected_router)
 app.include_router(students_router)
+app.include_router(ai_router)
 
 
 if __name__ == "__main__":

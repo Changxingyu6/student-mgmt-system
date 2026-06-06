@@ -10,12 +10,17 @@
       <el-icon><User /></el-icon>
       <span>学生管理</span>
     </el-menu-item>
+    <el-menu-item index="/ai-chat">
+      <el-icon><Message /></el-icon>
+      <span>AI 助手</span>
+    </el-menu-item>
   </el-menu>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { User, Message } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const activeMenu = computed(() => route.path)

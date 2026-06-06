@@ -1,6 +1,5 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
-import { useUserStore } from '@/stores/user'
 
 const request = axios.create({
   baseURL: 'http://localhost:8000',
@@ -10,9 +9,10 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   config => {
-    const userStore = useUserStore()
-    if (userStore.token) {
-      config.headers.Authorization = `Bearer ${userStore.token}`
+    // 直接从 localStorage 获取 token，避免在非 Vue 上下文使用 Pinia
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
     }
     return config
   },
@@ -29,8 +29,8 @@ request.interceptors.response.use(
   error => {
     if (error.response?.status === 401) {
       ElMessage.error('登录已过期，请重新登录')
-      const userStore = useUserStore()
-      userStore.logout()
+      // 直接清除 localStorage 中的 token
+      localStorage.removeItem('token')
       window.location.href = '/login'
     } else {
       ElMessage.error(error.response?.data?.detail || '请求失败')
