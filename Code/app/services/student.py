@@ -3,38 +3,27 @@
 负责学生相关的业务逻辑处理（验证、规则、事务等）
 """
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any
-from fastapi import HTTPException, Depends
+from typing import List
+from fastapi import HTTPException
 from dao import student as student_repo
 from schema.student import StudentCreate, StudentUpdate, StudentResponse
-from database import get_db
 
 
-def get_all_students(
-    page: int = 1, 
-    limit: int = 10, 
-    db: Session = Depends(get_db)
-) -> List[StudentResponse]:
+def get_all_students(db: Session, page: int = 1, limit: int = 10) -> List[StudentResponse]:
     """获取学生列表"""
     students = student_repo.get_students(db, page=page, limit=limit)
-    return [StudentResponse.from_orm(student) for student in students]
+    return [StudentResponse.model_validate(student) for student in students]
 
 
-def get_student(
-    student_id: int, 
-    db: Session = Depends(get_db)
-) -> StudentResponse:
+def get_student(db: Session, student_id: int) -> StudentResponse:
     """获取单个学生（带错误处理）"""
     student = student_repo.get_student_by_id(db, student_id)
     if student is None:
         raise HTTPException(status_code=404, detail="学生不存在")
-    return StudentResponse.from_orm(student)
+    return StudentResponse.model_validate(student)
 
 
-def create_new_student(
-    student: StudentCreate, 
-    db: Session = Depends(get_db)
-) -> StudentResponse:
+def create_new_student(db: Session, student: StudentCreate) -> StudentResponse:
     """创建新学生（带验证）"""
     # 验证学生编号是否已存在
     existing = student_repo.get_student_by_no(db, student.student_no)
@@ -45,14 +34,10 @@ def create_new_student(
     db_student = student_repo.create_student(db, student)
     
     # 返回创建的学生信息
-    return StudentResponse.from_orm(db_student)
+    return StudentResponse.model_validate(db_student)
 
 
-def update_existing_student(
-    student_id: int, 
-    student: StudentUpdate, 
-    db: Session = Depends(get_db)
-) -> StudentResponse:
+def update_existing_student(db: Session, student_id: int, student: StudentUpdate) -> StudentResponse:
     """更新学生信息（带验证）"""
     # 检查学生是否存在
     existing = student_repo.get_student_by_id(db, student_id)
@@ -69,13 +54,10 @@ def update_existing_student(
     db_student = student_repo.update_student(db, student_id, student)
     
     # 返回更新后的学生信息
-    return StudentResponse.from_orm(db_student)
+    return StudentResponse.model_validate(db_student)
 
 
-def delete_existing_student(
-    student_id: int, 
-    db: Session = Depends(get_db)
-) -> Dict[str, str]:
+def delete_existing_student(db: Session, student_id: int) -> dict:
     """删除学生（带验证）"""
     # 检查学生是否存在
     existing = student_repo.get_student_by_id(db, student_id)

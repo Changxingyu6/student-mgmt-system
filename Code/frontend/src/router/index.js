@@ -18,11 +18,6 @@ const routes = [
         path: 'students',
         name: 'Students',
         component: () => import('@/views/Students.vue')
-      },
-      {
-        path: 'ai-chat',
-        name: 'AIChat',
-        component: () => import('@/views/AIChat.vue')
       }
     ]
   }

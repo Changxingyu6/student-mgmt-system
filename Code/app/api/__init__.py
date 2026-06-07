@@ -2,8 +2,8 @@
 # 导入并导出所有路由
 
 from .students import router as students_router
-from .auth import public_router as auth_public_router, protected_router as auth_protected_router
+from .auth import router as auth_router
 from .ai import router as ai_router
 
 # 统一导出所有路由
-__all__ = ["students_router", "auth_public_router", "auth_protected_router", "ai_router"]
+__all__ = ["students_router", "auth_router", "ai_router"]

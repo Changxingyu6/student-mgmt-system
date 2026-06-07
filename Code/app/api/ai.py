@@ -2,12 +2,11 @@
 AI 对话路由
 提供与AI交互的API接口
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List
 from services.ai_service import chat_with_ai_stream
-from deps import get_current_user
 
 router = APIRouter(
     prefix="/ai",
@@ -25,10 +24,10 @@ class ChatRequest(BaseModel):
 
 
 @router.post("/chat")
-async def chat(request: ChatRequest, current_user: dict = Depends(get_current_user)):
-    """AI对话接口（流式响应）"""
+async def chat(request: Request, chat_request: ChatRequest):
+    """AI对话接口（流式响应）- 所有登录用户可用"""
     # 将消息转换为API格式
-    messages = [{"role": m.role, "content": m.content} for m in request.messages]
+    messages = [{"role": m.role, "content": m.content} for m in chat_request.messages]
     
     # 返回流式响应
     return StreamingResponse(

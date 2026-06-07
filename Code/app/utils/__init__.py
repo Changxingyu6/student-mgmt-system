@@ -4,6 +4,7 @@
 """
 from .crypto import generate_salt, md5_hash, verify_password
 from .jwt_utils import create_access_token, decode_access_token
+from .decorators import require_roles
 
 
 def format_response(data=None, message="success", code=200):
@@ -22,5 +23,6 @@ __all__ = [
     "md5_hash",
     "verify_password",
     "create_access_token",
-    "decode_access_token"
+    "decode_access_token",
+    "require_roles"
 ]

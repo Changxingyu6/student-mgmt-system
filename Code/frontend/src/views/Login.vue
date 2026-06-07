@@ -44,7 +44,7 @@ const handleLogin = async () => {
   try {
     await userStore.login(form.value.username, form.value.password)
     ElMessage.success('登录成功')
-    router.push('/')
+    router.push('/students')
   } catch (error) {
     console.error(error)
   }

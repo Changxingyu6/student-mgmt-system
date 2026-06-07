@@ -11,8 +11,11 @@ request.interceptors.request.use(
   config => {
     // 直接从 localStorage 获取 token，避免在非 Vue 上下文使用 Pinia
     const token = localStorage.getItem('token')
+    console.log('Request URL:', config.url)
+    console.log('Token from localStorage:', token ? '存在' : '不存在')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+      console.log('Authorization header set:', config.headers.Authorization)
     }
     return config
   },

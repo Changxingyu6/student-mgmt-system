@@ -19,12 +19,16 @@
         </el-main>
       </el-container>
     </el-container>
+
+    <!-- AI 悬浮球 -->
+    <AIFloatButton />
   </div>
 </template>
 
 <script setup>
 import Sidebar from '@/components/Layout/Sidebar.vue'
 import Header from '@/components/Layout/Header.vue'
+import AIFloatButton from '@/components/AIFloatButton.vue'
 </script>
 
 <style scoped>
