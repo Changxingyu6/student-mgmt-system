@@ -9,10 +9,15 @@ export const useUserStore = defineStore('user', {
 
   actions: {
     async login(username, password) {
-      const res = await loginApi(username, password)
-      this.token = res.data.access_token
-      localStorage.setItem('token', this.token)
-      return res
+      try {
+        const res = await loginApi(username, password)
+        this.token = res.data.access_token
+        localStorage.setItem('token', this.token)
+        return res
+      } catch (error) {
+        // 重新抛出错误，让组件处理
+        throw error
+      }
     },
 
     async getUserInfo() {

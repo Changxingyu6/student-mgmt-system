@@ -5,7 +5,7 @@ export function login(username, password) {
   formData.append('username', username)
   formData.append('password', password)
   return request({
-    url: '/auth/login',
+    url: '/users/login',
     method: 'post',
     data: formData
   })
@@ -13,7 +13,7 @@ export function login(username, password) {
 
 export function getUserInfo() {
   return request({
-    url: '/auth/me',
+    url: '/users/me',
     method: 'get'
   })
 }
@@ -23,7 +23,7 @@ export function updateUserInfo(username, password) {
   if (username) params.username = username
   if (password) params.password = password
   return request({
-    url: '/auth/me',
+    url: '/users/me',
     method: 'put',
     params
   })

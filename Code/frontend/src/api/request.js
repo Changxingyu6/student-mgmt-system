@@ -31,8 +31,13 @@ request.interceptors.response.use(
   },
   error => {
     if (error.response?.status === 401) {
+      // 检查是否是登录接口（通过 URL 判断）
+      if (error.config?.url?.includes('/users/login')) {
+        // 登录接口的 401 错误，抛出错误让组件处理显示
+        return Promise.reject(error)
+      }
+      // 其他 401 错误（如 token 过期）
       ElMessage.error('登录已过期，请重新登录')
-      // 直接清除 localStorage 中的 token
       localStorage.removeItem('token')
       window.location.href = '/login'
     } else {

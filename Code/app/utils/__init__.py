@@ -5,6 +5,7 @@
 from .crypto import generate_salt, md5_hash, verify_password
 from .jwt_utils import create_access_token, decode_access_token
 from .decorators import require_roles
+from .logger import get_logger, logger
 
 
 def format_response(data=None, message="success", code=200):
@@ -24,5 +25,7 @@ __all__ = [
     "verify_password",
     "create_access_token",
     "decode_access_token",
-    "require_roles"
+    "require_roles",
+    "get_logger",
+    "logger"
 ]

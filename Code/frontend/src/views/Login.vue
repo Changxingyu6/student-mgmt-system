@@ -7,10 +7,10 @@
           <el-input v-model="form.username" placeholder="用户名" />
         </el-form-item>
         <el-form-item prop="password">
-          <el-input v-model="form.password" type="password" placeholder="密码" />
+          <el-input v-model="form.password" type="password" placeholder="密码" @keyup.enter="handleLogin" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleLogin" style="width: 100%">
+          <el-button type="primary" @click="handleLogin" style="width: 100%" :loading="loading">
             登录
           </el-button>
         </el-form-item>
@@ -28,6 +28,7 @@ import { ElMessage } from 'element-plus'
 const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref()
+const loading = ref(false)
 
 const form = ref({
   username: '',
@@ -41,12 +42,17 @@ const rules = {
 
 const handleLogin = async () => {
   await formRef.value.validate()
+  loading.value = true
   try {
     await userStore.login(form.value.username, form.value.password)
     ElMessage.success('登录成功')
     router.push('/students')
   } catch (error) {
-    console.error(error)
+    // 错误信息已由后端返回，直接显示
+    const errorMsg = error?.response?.data?.detail || error?.message || '登录失败'
+    ElMessage.error(errorMsg)
+  } finally {
+    loading.value = false
   }
 }
 </script>

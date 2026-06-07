@@ -1,22 +1,23 @@
 import request from './request'
 
-export function updateUserInfo(data) {
-  const formData = new FormData()
-  formData.append('old_password', data.old_password)
-  formData.append('new_password', data.new_password)
+export function getUsers(page = 1, limit = 10) {
   return request({
-    url: '/auth/me',
-    method: 'put',
-    data: formData,
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+    url: '/users',
+    method: 'get',
+    params: { page, limit }
   })
 }
 
-export function getUserInfo() {
+export function getLockedUsers() {
   return request({
-    url: '/auth/me',
+    url: '/users/locked',
     method: 'get'
+  })
+}
+
+export function unlockUser(userId) {
+  return request({
+    url: `/users/${userId}/unlock`,
+    method: 'post'
   })
 }
