@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from fastapi import HTTPException
-from api import user_api_router, role_api_router, address_api_router, log_api_router, ai_api_router
+from api import user_api_router, role_api_router, address_api_router, log_api_router, ai_api_router, shopping_cart_api_router
 from utils.jwt_utils import decode_access_token
 from utils.logger import get_logger
 
@@ -98,6 +98,7 @@ app.include_router(role_api_router)
 app.include_router(address_api_router)
 app.include_router(log_api_router)
 app.include_router(ai_api_router)
+app.include_router(shopping_cart_api_router)
 
 
 if __name__ == "__main__":
