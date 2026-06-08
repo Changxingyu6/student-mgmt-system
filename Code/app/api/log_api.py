@@ -8,15 +8,17 @@ from datetime import datetime
 from database import get_db
 from services import log_service
 from utils.logger import get_logger
+from utils import format_response
+from schema.base import ApiResponse
 
 logger = get_logger("logs_api")
 
 router = APIRouter(prefix="/logs", tags=["日志管理"])
 
 
-@router.get("/login", summary="查询登录日志列表")
+@router.get("/login", response_model=ApiResponse[dict], summary="查询登录日志列表")
 def get_login_logs(
-    user_id: int = Query(None, description="用户ID"),
+    user_id: str = Query(None, description="用户ID"),
     start_time: datetime = Query(None, description="开始时间"),
     end_time: datetime = Query(None, description="结束时间"),
     status: str = Query(None, description="登录状态: success/failed"),
@@ -28,12 +30,12 @@ def get_login_logs(
     result = log_service.LoginLogService.get_login_logs(
         db, user_id, start_time, end_time, status, page, limit
     )
-    return {"code": 200, "message": "查询成功", "data": result}
+    return format_response(data=result, message="查询成功")
 
 
-@router.get("/operation", summary="查询操作日志列表")
+@router.get("/operation", response_model=ApiResponse[dict], summary="查询操作日志列表")
 def get_operation_logs(
-    user_id: int = Query(None, description="用户ID"),
+    user_id: str = Query(None, description="用户ID"),
     module: str = Query(None, description="操作模块"),
     action: str = Query(None, description="操作类型"),
     start_time: datetime = Query(None, description="开始时间"),
@@ -46,10 +48,10 @@ def get_operation_logs(
     result = log_service.OperationLogService.get_operation_logs(
         db, user_id, module, action, start_time, end_time, page, limit
     )
-    return {"code": 200, "message": "查询成功", "data": result}
+    return format_response(data=result, message="查询成功")
 
 
-@router.delete("/cleanup", summary="清理过期日志")
+@router.delete("/cleanup", response_model=ApiResponse[dict], summary="清理过期日志")
 def cleanup_old_logs(
     login_days: int = Query(90, description="登录日志保留天数"),
     operation_days: int = Query(180, description="操作日志保留天数"),
@@ -58,5 +60,5 @@ def cleanup_old_logs(
     """清理过期日志"""
     result = log_service.OperationLogService.cleanup_old_logs(db, login_days, operation_days)
     if not result:
-        return {"code": 500, "message": "清理失败"}
-    return {"code": 200, "message": "清理成功", "data": result}
+        return format_response(message="清理失败", code=500)
+    return format_response(data=result, message="清理成功")

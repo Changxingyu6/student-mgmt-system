@@ -9,6 +9,7 @@ from utils import format_response, require_roles
 from database import get_db
 from schema.user import *
 from schema.role import UserRoleUpdateRequest
+from schema.base import ApiResponse
 
 router = APIRouter(prefix="/users", tags=["用户管理"])
 
@@ -94,11 +95,11 @@ def get_users(
     return format_response(data=data)
 
 
-@router.get("/{user_id}", summary="获取用户详情")
+@router.get("/{user_id}", response_model=ApiResponse[UserResponse], summary="获取用户详情")
 @require_roles(["admin"])
 def get_user_detail(
     request: Request,
-    user_id: int,
+    user_id: str,
     db: Session = Depends(get_db)
 ):
     """获取指定用户详情（仅管理员可访问）"""
@@ -106,7 +107,7 @@ def get_user_detail(
     return format_response(data=result, message="获取成功")
 
 
-@router.post("", summary="创建用户")
+@router.post("", response_model=ApiResponse[UserResponse], summary="创建用户")
 @require_roles(["admin"])
 def create_user(
     request: Request,
@@ -128,11 +129,11 @@ def create_user(
     return format_response(data=result, message="创建成功")
 
 
-@router.put("/{user_id}", summary="更新用户信息")
+@router.put("/{user_id}", response_model=ApiResponse[UserResponse], summary="更新用户信息")
 @require_roles(["admin"])
 def update_user(
     request: Request,
-    user_id: int,
+    user_id: str,
     user_request: UserUpdateRequest = Body(...),
     db: Session = Depends(get_db)
 ):
@@ -148,11 +149,11 @@ def update_user(
     return format_response(data=result, message="更新成功")
 
 
-@router.delete("/{user_id}", summary="删除用户")
+@router.delete("/{user_id}", response_model=ApiResponse[dict], summary="删除用户")
 @require_roles(["admin"])
 def delete_user(
     request: Request,
-    user_id: int,
+    user_id: str,
     db: Session = Depends(get_db)
 ):
     """删除用户（仅管理员可访问，逻辑删除）"""
@@ -171,11 +172,11 @@ def get_locked_users(
     return format_response(data=data, message="获取成功")
 
 
-@router.post("/{user_id}/unlock", summary="解锁用户")
+@router.post("/{user_id}/unlock", response_model=ApiResponse[dict], summary="解锁用户")
 @require_roles(["admin"])
 def unlock_user(
     request: Request,
-    user_id: int,
+    user_id: str,
     db: Session = Depends(get_db)
 ):
     """解锁用户账户（仅管理员可访问）"""
@@ -183,11 +184,11 @@ def unlock_user(
     return format_response(data=data, message="解锁成功")
 
 
-@router.post("/{user_id}/freeze", summary="冻结用户")
+@router.post("/{user_id}/freeze", response_model=ApiResponse[dict], summary="冻结用户")
 @require_roles(["admin"])
 def freeze_user(
     request: Request,
-    user_id: int,
+    user_id: str,
     db: Session = Depends(get_db)
 ):
     """冻结用户账户（仅管理员可访问）"""
@@ -195,11 +196,11 @@ def freeze_user(
     return format_response(data=data, message="冻结成功")
 
 
-@router.post("/{user_id}/unfreeze", summary="解冻用户")
+@router.post("/{user_id}/unfreeze", response_model=ApiResponse[dict], summary="解冻用户")
 @require_roles(["admin"])
 def unfreeze_user(
     request: Request,
-    user_id: int,
+    user_id: str,
     db: Session = Depends(get_db)
 ):
     """解冻用户账户（仅管理员可访问）"""
@@ -207,11 +208,11 @@ def unfreeze_user(
     return format_response(data=data, message="解冻成功")
 
 
-@router.post("/{user_id}/recharge", summary="充值余额")
+@router.post("/{user_id}/recharge", response_model=ApiResponse[dict], summary="充值余额")
 @require_roles(["admin"])
 def recharge_balance(
     request: Request,
-    user_id: int,
+    user_id: str,
     balance_request: BalanceOperationRequest = Body(...),
     db: Session = Depends(get_db)
 ):
@@ -222,11 +223,11 @@ def recharge_balance(
     return format_response(data=result, message="充值成功")
 
 
-@router.post("/{user_id}/role", summary="修改用户角色")
+@router.post("/{user_id}/role", response_model=ApiResponse[dict], summary="修改用户角色")
 @require_roles()  # 只有 admin 能访问
 def update_user_role(
     request: Request,
-    user_id: int,
+    user_id: str,
     role_request: UserRoleUpdateRequest = Body(...),
     db: Session = Depends(get_db)
 ):

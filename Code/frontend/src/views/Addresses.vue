@@ -96,7 +96,7 @@ const addressForm = reactive({
 const loadAddresses = async () => {
   try {
     const res = await getAddresses()
-    tableData.value = res.data || []
+    tableData.value = res.data.data || []
   } catch (error) {
     console.error(error)
   }

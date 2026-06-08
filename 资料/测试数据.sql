@@ -22,7 +22,7 @@ INSERT INTO users (id, username, password, salt, nickname, phone, email, gender,
 ('u-user002', 'user2', 'd3844cfc49293676b63aa3921700e718', 'user2Salt123', '李四', '13800000003', 'lisi@example.com', 'female', '青铜会员', 1000.00, 'active', 'r-002', NOW(), NOW()),
 ('u-user003', 'vipuser', 'a18cb43caee770d5fbfa1d1808386c8f', 'vipSalt123', '王五', '13800000004', 'wangwu@example.com', 'male', '黄金会员', 50000.00, 'active', 'r-003', NOW(), NOW()),
 ('u-user004', 'testuser', 'c493ea81abaabb5369815f26dff96bea', 'testSalt123', '测试用户', '13800000005', 'test@example.com', 'other', '青铜会员', 100.00, 'active', 'r-002', NOW(), NOW()),
-('u-user005', 'frozenuser', '13b9571ef3b795ead7aaadc27ecf3bb4', 'frozenSalt', '冻结用户', '13800000006', 'frozen@example.com', 'female', '青铜会员', 500.00, 'frozen', 'r-002', NOW(), NOW());
+('u-user005', 'frozenuser', '13b9571ef3b795ead7aaadc27ecf3bb4', 'frozenSalt', '冻结用户', '13800000006', 'frozen@example.com', 'female', '青铜会员', 500.00, 'active', 'r-002', NOW(), NOW());
 
 -- ============================================
 -- 3. 用户收货地址表测试数据

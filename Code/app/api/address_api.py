@@ -24,7 +24,7 @@ def get_address_list(
     return format_response(data=result, message="获取成功")
 
 
-@router.get("/default", response_model=AddressResponse, summary="获取默认地址")
+@router.get("/default", response_model=ApiResponse[AddressResponse], summary="获取默认地址")
 def get_default_address(
     request: Request,
     db: Session = Depends(get_db)
@@ -35,7 +35,7 @@ def get_default_address(
     return format_response(data=result, message="获取成功")
 
 
-@router.post("", response_model=AddressResponse, summary="创建收货地址")
+@router.post("", response_model=ApiResponse[AddressResponse], summary="创建收货地址")
 def create_address(
     request: Request,
     address_request: AddressCreateRequest,
@@ -53,13 +53,13 @@ def create_address(
         address_request.district,
         address_request.is_default
     )
-    return format_response(data=result, message="创建成功", status_code=status.HTTP_201_CREATED)
+    return format_response(data=result, message="创建成功", code=status.HTTP_201_CREATED)
 
 
-@router.put("/{address_id}", response_model=AddressResponse, summary="更新收货地址")
+@router.put("/{address_id}", response_model=ApiResponse[AddressResponse], summary="更新收货地址")
 def update_address(
     request: Request,
-    address_id: int,
+    address_id: str,
     address_request: AddressUpdateRequest,
     db: Session = Depends(get_db)
 ):
@@ -69,10 +69,10 @@ def update_address(
     return format_response(data=result, message="更新成功")
 
 
-@router.delete("/{address_id}", summary="删除收货地址")
+@router.delete("/{address_id}", response_model=ApiResponse[AddressResponse], summary="删除收货地址")
 def remove_address(
     request: Request,
-    address_id: int,
+    address_id: str,
     db: Session = Depends(get_db)
 ):
     """删除收货地址"""
@@ -81,10 +81,10 @@ def remove_address(
     return format_response(data=result, message="删除成功")
 
 
-@router.post("/{address_id}/default", response_model=AddressResponse, summary="设置默认地址")
+@router.post("/{address_id}/default", response_model=ApiResponse[AddressResponse], summary="设置默认地址")
 def make_default_address(
     request: Request,
-    address_id: int,
+    address_id: str,
     db: Session = Depends(get_db)
 ):
     """将指定地址设为默认地址"""

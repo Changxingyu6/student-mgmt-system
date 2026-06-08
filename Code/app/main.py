@@ -36,8 +36,8 @@ async def auth_middleware(request: Request, call_next):
     """
     start_time = time.time()
     
-    # 1. 检查是否在白名单中
-    if request.url.path in WHITELIST:
+    # 1. 检查是否在白名单中（前缀匹配）
+    if any(request.url.path.startswith(path) for path in WHITELIST):
         response = await call_next(request)
         return response
     
