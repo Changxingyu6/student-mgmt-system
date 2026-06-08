@@ -574,7 +574,7 @@ def verify_pay_password(db: Session, user_id: str, password: str) -> bool:
 
 def check_balance_sufficient(db: Session, user_id: str, amount: float) -> bool:
     """
-    判断用户余额是否足够支付指定金额
+    判断用户余额是否足够支付指定金额，充足则直接扣减余额
     
     Args:
         db: 数据库会话
@@ -582,7 +582,7 @@ def check_balance_sufficient(db: Session, user_id: str, amount: float) -> bool:
         amount: 待支付金额（正数）
     
     Returns:
-        bool: 余额充足返回True，不足返回False
+        bool: 余额充足并扣减成功返回True，不足返回False
     """
     logger.debug(f"检查余额 - 用户ID: {user_id}, 金额: {amount}")
     
@@ -599,5 +599,8 @@ def check_balance_sufficient(db: Session, user_id: str, amount: float) -> bool:
         logger.warn(f"检查余额失败 - 余额不足 - 用户ID: {user_id}, 余额: {balance}, 需要: {amount}")
         return False
     
-    logger.debug(f"余额检查通过 - 用户ID: {user_id}, 余额: {balance}, 需要: {amount}")
+    # 余额充足，直接扣减
+    user_repo.deduct_balance(db, user_id, amount, "余额支付")
+    
+    logger.debug(f"余额扣减成功 - 用户ID: {user_id}, 扣减金额: {amount}, 剩余余额: {balance - amount}")
     return True
