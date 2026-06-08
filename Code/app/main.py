@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from fastapi import HTTPException
-from api import students_router, ai_router, users_router
+from api import ai_router, users_router, logs_router
 from utils.jwt_utils import decode_access_token
 from utils.logger import get_logger
 
@@ -22,8 +22,8 @@ WHITELIST = [
 
 # 创建 FastAPI 实例
 app = FastAPI(
-    title="学生管理系统 API",
-    description="基于 FastAPI 的学生管理系统，使用 SQLAlchemy 进行数据库操作，采用三层架构",
+    title="电商管理平台 API",
+    description="基于 FastAPI 的电商管理平台，使用 SQLAlchemy 进行数据库操作，采用三层架构",
     version="1.0.0"
 )
 
@@ -115,8 +115,8 @@ app.add_middleware(
 
 # ===== 注册路由 =====
 app.include_router(users_router)
-app.include_router(students_router)
 app.include_router(ai_router)
+app.include_router(logs_router)
 
 
 if __name__ == "__main__":

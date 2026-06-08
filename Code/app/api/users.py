@@ -16,12 +16,15 @@ router = APIRouter(prefix="/users", tags=["用户管理"])
 
 @router.post("/login")
 def login(
+    request: Request,
     username: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
     """用户登录"""
-    result = user_service.login_for_access_token(username, password, db)
+    ip_address = request.client.host if request.client else ""
+    user_agent = request.headers.get("User-Agent", "")
+    result = user_service.login_for_access_token(username, password, db, ip_address, user_agent)
     return format_response(data=result, message="登录成功")
 
 

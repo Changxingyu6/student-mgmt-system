@@ -11,13 +11,13 @@ def require_roles(allowed_roles: list):
     角色权限装饰器（从中间件获取用户信息）
 
     使用示例：
-    @router.get("/students")
-    @require_roles(["admin", "teacher"])
-    def get_students(request: Request):
+    @router.get("/users")
+    @require_roles(["admin"])
+    def get_users(request: Request):
         ...
 
     Args:
-        allowed_roles: 允许访问的角色列表，如 ["admin", "teacher"]
+        allowed_roles: 允许访问的角色列表，如 ["admin"]
     """
     def decorator(func):
         @wraps(func)

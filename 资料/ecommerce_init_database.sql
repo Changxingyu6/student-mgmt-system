@@ -281,6 +281,39 @@ CREATE TABLE IF NOT EXISTS activity_goods (
     UNIQUE KEY uk_activity_goods (activity_id, goods_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='活动商品关联表';
 
+-- 16. 登录日志表
+CREATE TABLE IF NOT EXISTS login_logs (
+    id INT PRIMARY KEY AUTO_INCREMENT COMMENT 'ID',
+    user_id INT COMMENT '用户ID（登录成功时记录）',
+    username VARCHAR(50) COMMENT '登录用户名',
+    ip_address VARCHAR(50) COMMENT '登录IP',
+    user_agent VARCHAR(255) COMMENT '浏览器信息',
+    login_type ENUM('password','sms','wechat','alipay') DEFAULT 'password' COMMENT '登录方式',
+    status ENUM('success','failed') COMMENT '登录状态',
+    error_message VARCHAR(255) COMMENT '错误信息',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
+    INDEX idx_user_id (user_id),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='登录日志表';
+
+-- 17. 操作日志表
+CREATE TABLE IF NOT EXISTS operation_logs (
+    id INT PRIMARY KEY AUTO_INCREMENT COMMENT 'ID',
+    user_id INT NOT NULL COMMENT '操作用户ID',
+    username VARCHAR(50) COMMENT '操作用户名',
+    module VARCHAR(50) COMMENT '操作模块',
+    action VARCHAR(50) COMMENT '操作类型',
+    target_id INT COMMENT '操作对象ID',
+    target_name VARCHAR(255) COMMENT '操作对象名称',
+    before_data TEXT COMMENT '操作前数据（JSON）',
+    after_data TEXT COMMENT '操作后数据（JSON）',
+    ip_address VARCHAR(50) COMMENT '操作IP',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+    INDEX idx_user_id (user_id),
+    INDEX idx_module (module),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';
+
 -- ========================================
 -- 电商管理平台测试数据
 -- ========================================

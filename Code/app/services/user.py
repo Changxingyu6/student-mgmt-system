@@ -11,6 +11,7 @@ from dao import user as user_repo
 from utils import generate_salt, md5_hash, verify_password, create_access_token
 from utils.logger import get_logger
 from utils.password_policy import validate_password
+from services.log import LoginLogService
 
 # 获取日志记录器
 logger = get_logger("user")
@@ -84,7 +85,9 @@ def authenticate_user(
 def login_for_access_token(
     username: str, 
     password: str, 
-    db: Session
+    db: Session,
+    ip_address: str = "",
+    user_agent: str = ""
 ) -> dict:
     """用户登录获取token"""
     logger.info(f"用户登录尝试 - 用户名: {username}")
@@ -94,6 +97,18 @@ def login_for_access_token(
         remaining_seconds = get_lock_remaining_time(db, username)
         remaining_minutes = (remaining_seconds // 60) + 1
         logger.warn(f"登录失败 - 账户已被锁定 - 用户名: {username}")
+        
+        # 记录登录失败日志
+        LoginLogService.log_login(
+            db=db,
+            username=username,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            login_type="password",
+            status="failed",
+            error_message=f"账户已被锁定，请{remaining_minutes}分钟后再试"
+        )
+        
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"账户已被锁定，请{remaining_minutes}分钟后再试",
@@ -119,6 +134,18 @@ def login_for_access_token(
             # 锁定账户
             user_repo.lock_user(db, username, lock_duration)
             logger.error(f"账户已被锁定 - 用户名: {username} - 锁定次数: {current_lock_count} - 锁定时长: {lock_duration}分钟")
+            
+            # 记录登录失败日志
+            LoginLogService.log_login(
+                db=db,
+                username=username,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                login_type="password",
+                status="failed",
+                error_message=f"登录失败{MAX_FAILED_ATTEMPTS}次，账户已被锁定{lock_duration}分钟（第{current_lock_count}次锁定）"
+            )
+            
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=f"登录失败{MAX_FAILED_ATTEMPTS}次，账户已被锁定{lock_duration}分钟（第{current_lock_count}次锁定）",
@@ -127,6 +154,18 @@ def login_for_access_token(
         
         remaining_attempts = MAX_FAILED_ATTEMPTS - failed_count
         logger.warn(f"登录失败 - 用户名或密码错误 - 用户名: {username} - 剩余尝试次数: {remaining_attempts}")
+        
+        # 记录登录失败日志
+        LoginLogService.log_login(
+            db=db,
+            username=username,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            login_type="password",
+            status="failed",
+            error_message=f"用户名或密码错误，还剩{remaining_attempts}次尝试机会"
+        )
+        
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"用户名或密码错误，还剩{remaining_attempts}次尝试机会",
@@ -149,6 +188,17 @@ def login_for_access_token(
     )
     
     logger.info(f"登录成功 - 用户名: {username} - 角色: {user['role']}")
+    
+    # 记录登录成功日志
+    LoginLogService.log_login(
+        db=db,
+        user_id=user["id"],
+        username=username,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        login_type="password",
+        status="success"
+    )
     
     return {
         "access_token": access_token,
