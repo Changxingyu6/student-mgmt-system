@@ -15,14 +15,42 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       {
-        path: 'students',
-        name: 'Students',
-        component: () => import('@/views/Students.vue')
+        path: '',
+        name: 'Dashboard',
+        component: () => import('@/views/Dashboard.vue')
       },
       {
         path: 'users',
         name: 'Users',
-        component: () => import('@/views/Users.vue')
+        component: () => import('@/views/Users.vue'),
+        meta: { requiresAdmin: true }
+      },
+      {
+        path: 'roles',
+        name: 'Roles',
+        component: () => import('@/views/Roles.vue'),
+        meta: { requiresAdmin: true }
+      },
+      {
+        path: 'logs',
+        name: 'Logs',
+        component: () => import('@/views/Logs.vue'),
+        meta: { requiresAdmin: true }
+      },
+      {
+        path: 'addresses',
+        name: 'Addresses',
+        component: () => import('@/views/Addresses.vue')
+      },
+      {
+        path: 'cart',
+        name: 'Cart',
+        component: () => import('@/views/Cart.vue')
+      },
+      {
+        path: 'ai',
+        name: 'AIChat',
+        component: () => import('@/views/AIChat.vue')
       }
     ]
   }
@@ -42,6 +70,14 @@ router.beforeEach((to, from, next) => {
     next('/login')
   } else if (to.path === '/login' && token) {
     next('/')
+  } else if (to.meta.requiresAdmin) {
+    // 检查是否是管理员
+    const userInfo = userStore.userInfo
+    if (userInfo && userInfo.role === 'admin') {
+      next()
+    } else {
+      next('/')
+    }
   } else {
     next()
   }

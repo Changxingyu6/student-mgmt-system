@@ -1,0 +1,362 @@
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS ecommerce_db
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
+USE ecommerce_db;
+
+-- 1. 用户表
+CREATE TABLE IF NOT EXISTS users (
+    id VARCHAR(50) PRIMARY KEY COMMENT '用户ID',
+    username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
+    password VARCHAR(32) NOT NULL COMMENT '密码（MD5加密，32位）',
+    pay_password VARCHAR(32) DEFAULT NULL COMMENT '支付密码（MD5加密）',
+    salt VARCHAR(32) NOT NULL COMMENT '加密盐值',
+    nickname VARCHAR(50) COMMENT '昵称',
+    phone VARCHAR(20) COMMENT '手机号',
+    email VARCHAR(100) COMMENT '邮箱',
+    gender ENUM('male','female','other') COMMENT '性别',
+    avatar VARCHAR(255) COMMENT '头像URL',
+    user_level ENUM('青铜会员','白银会员','黄金会员') DEFAULT '青铜会员' COMMENT '用户等级',
+    points INT DEFAULT 0 COMMENT '会员积分',
+    balance DECIMAL(10,2) DEFAULT 0.00 COMMENT '用户余额',
+    discount_rate DECIMAL(5,2) DEFAULT 1.00 COMMENT '优惠折扣率',
+    default_address_id VARCHAR(50) COMMENT '默认收货地址ID',
+    status ENUM('active','inactive','banned') DEFAULT 'active' COMMENT '账号状态',
+    failed_attempts INT DEFAULT 0 COMMENT '连续登录失败次数',
+    lock_until DATETIME COMMENT '账户锁定截止时间',
+    lock_count INT DEFAULT 0 COMMENT '连续锁定次数',
+    role_id VARCHAR(50) DEFAULT '3' COMMENT '角色ID',
+    is_deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除 0-未删除 1-已删除',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_username (username),
+    INDEX idx_phone (phone),
+    INDEX idx_status (status),
+    INDEX idx_level (user_level)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+
+-- 2. 角色表
+CREATE TABLE IF NOT EXISTS roles (
+    id VARCHAR(50) PRIMARY KEY COMMENT '角色ID',
+    role_name VARCHAR(50) NOT NULL UNIQUE COMMENT '角色名称',
+    description VARCHAR(255) COMMENT '角色描述',
+    status ENUM('active','inactive') DEFAULT 'active' COMMENT '状态',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_role_name (role_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
+
+-- 3. 收货地址表
+CREATE TABLE IF NOT EXISTS user_addresses (
+    id VARCHAR(50) PRIMARY KEY COMMENT '地址ID',
+    user_id VARCHAR(50) NOT NULL COMMENT '用户ID',
+    receiver_name VARCHAR(50) NOT NULL COMMENT '收货人姓名',
+    receiver_phone VARCHAR(20) NOT NULL COMMENT '收货人电话',
+    province VARCHAR(50) COMMENT '省份',
+    city VARCHAR(50) COMMENT '城市',
+    district VARCHAR(50) COMMENT '区县',
+    detail_address VARCHAR(255) NOT NULL COMMENT '详细地址',
+    is_default TINYINT(1) DEFAULT 0 COMMENT '是否默认地址 0-否 1-是',
+    is_deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户收货地址表';
+
+-- 3. 订单主表
+DROP TABLE IF EXISTS orders;
+CREATE TABLE orders (
+  id varchar(50) NOT NULL COMMENT '主键id',
+  order_id varchar(50) NOT NULL COMMENT '订单编号',
+  user_id varchar(50) NOT NULL COMMENT '用户id',
+  total_amount decimal(10,2) NOT NULL COMMENT '订单总金额',
+  actual_pay_amount decimal(10,2) NOT NULL DEFAULT 0.00 COMMENT '实付金额',
+  coupon_discount decimal(10,2) NOT NULL DEFAULT 0.00 COMMENT '优惠券抵扣',
+  member_discount decimal(10,2) NOT NULL DEFAULT 0.00 COMMENT '会员折扣',
+  order_status varchar(32) NOT NULL DEFAULT 'pending' COMMENT '订单状态',
+  pay_status varchar(32) NOT NULL DEFAULT 'unpaid' COMMENT '支付状态',
+  logistics_status varchar(32) NOT NULL DEFAULT 'waiting_ship' COMMENT '物流状态',
+  payment_method varchar(32) NOT NULL COMMENT '支付方式',
+  remark varchar(255) DEFAULT NULL COMMENT '订单备注',
+  receiver_name varchar(32) NOT NULL COMMENT '收货人姓名',
+  receiver_phone varchar(20) NOT NULL COMMENT '收货人电话',
+  shipping_address varchar(255) NOT NULL COMMENT '收货地址',
+  expire_time datetime NOT NULL COMMENT '失效时间',
+  pay_time datetime DEFAULT NULL COMMENT '支付时间',
+  ship_time datetime DEFAULT NULL COMMENT '发货时间',
+  receive_time datetime DEFAULT NULL COMMENT '签收时间',
+  is_deleted tinyint(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+  create_time datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  update_time datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_order_id (order_id),
+  KEY idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单主表';
+
+-- 4. 订单明细表
+DROP TABLE IF EXISTS order_items;
+CREATE TABLE order_items (
+  id varchar(50) NOT NULL COMMENT '主键id',
+  order_id varchar(64) NOT NULL COMMENT '订单编号',
+  product_id varchar(64) NOT NULL COMMENT '商品id',
+  product_name varchar(255) NOT NULL COMMENT '商品名称',
+  spec_info varchar(255) DEFAULT NULL COMMENT '规格信息',
+  product_image varchar(500) DEFAULT NULL COMMENT '商品图片',
+  quantity bigint NOT NULL COMMENT '购买数量',
+  total_amount decimal(10,2) NOT NULL COMMENT '总计金额',
+  item_remark varchar(255) DEFAULT NULL COMMENT '商品明细备注',
+  is_deleted tinyint(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+  create_time datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  update_time datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (id),
+  KEY idx_order_id (order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单明细表';
+
+-- 5. 售后订单表
+DROP TABLE IF EXISTS after_sales;
+CREATE TABLE after_sales (
+  id varchar(50) NOT NULL COMMENT '主键id',
+  order_id varchar(50) NOT NULL COMMENT '订单编号',
+  user_id varchar(50) NOT NULL COMMENT '用户id',
+  product_id varchar(64) NOT NULL COMMENT '商品id',
+  after_sale_type varchar(32) NOT NULL COMMENT '售后类型',
+  reason varchar(255) NOT NULL COMMENT '售后原因',
+  refund_amount decimal(10,2) NOT NULL COMMENT '退款金额',
+  refund_quantity bigint NOT NULL COMMENT '退款数量',
+  actual_pay_amount decimal(10,2) NOT NULL COMMENT '实付金额',
+  audit_status varchar(32) DEFAULT 'pending' COMMENT '审核状态',
+  after_sale_status smallint NOT NULL DEFAULT 1 COMMENT '1-仅退款 2-全额退款',
+  shipping_address varchar(255) NOT NULL COMMENT '收货地址',
+  payment_method varchar(32) NOT NULL COMMENT '支付方式',
+  order_create_time datetime NOT NULL COMMENT '下单时间',
+  order_ship_time datetime DEFAULT NULL COMMENT '发货时间',
+  order_complete_time datetime DEFAULT NULL COMMENT '完成时间',
+  remark varchar(255) DEFAULT NULL COMMENT '备注',
+  is_deleted tinyint(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+  create_time datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  update_time datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (id),
+  KEY idx_order_id (order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='售后订单表';
+
+-- 6. 支付记录表
+CREATE TABLE payments (
+  pay_id VARCHAR(50) PRIMARY KEY COMMENT '支付单ID',
+  pay_no VARCHAR(64) NOT NULL UNIQUE COMMENT '支付流水号',
+  order_id VARCHAR(50) NOT NULL COMMENT '订单ID',
+  user_id VARCHAR(50) NOT NULL COMMENT '用户ID',
+  pay_status ENUM('待支付','支付中','支付成功','支付失败','已关闭') NOT NULL DEFAULT '待支付' COMMENT '支付状态',
+  pay_amount DECIMAL(10,2) NOT NULL COMMENT '支付金额',
+  pay_method ENUM('余额') NOT NULL COMMENT '支付方式',
+  pay_time DATETIME DEFAULT NULL COMMENT '支付时间',
+  expire_time DATETIME DEFAULT NULL COMMENT '过期时间30分钟',
+  is_abnormal TINYINT(1) NOT NULL DEFAULT 0 COMMENT '0正常1异常',
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付记录表';
+
+-- 7. 退款记录表
+CREATE TABLE refund (
+  refund_id VARCHAR(50) PRIMARY KEY,
+  refund_no VARCHAR(64) NOT NULL UNIQUE,
+  after_sales_id VARCHAR(50) NOT NULL COMMENT '售后订单ID',
+  refund_status ENUM('待退款','退款中','退款成功','退款失败') NOT NULL DEFAULT '待退款',
+  refund_amount DECIMAL(10,2) NOT NULL,
+  refund_method ENUM('余额') NOT NULL,
+  refund_time DATETIME DEFAULT NULL,
+  is_abnormal TINYINT(1) NOT NULL DEFAULT 0 COMMENT '0正常1异常',
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  FOREIGN KEY (after_sales_id) REFERENCES after_sales(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退款记录表';
+
+-- 8. 物流表
+CREATE TABLE logistics (
+  logistics_id VARCHAR(50) PRIMARY KEY,
+  order_id VARCHAR(50) NOT NULL COMMENT '订单ID',
+  logistics_no VARCHAR(64) NOT NULL UNIQUE,
+  logistics_status ENUM('待发货','已揽收','运输中','派送中','已签收','异常') NOT NULL DEFAULT '待发货',
+  track_info TEXT DEFAULT NULL,
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='物流表';
+
+-- 9. 退货物流表
+CREATE TABLE return_logistics (
+  return_logistics_id VARCHAR(50) PRIMARY KEY,
+  after_sales_id VARCHAR(50) NOT NULL COMMENT '售后订单ID',
+  return_logistics_no VARCHAR(64) NOT NULL UNIQUE,
+  return_logistics_status ENUM('待发货','已揽收','运输中','派送中','已签收','异常') NOT NULL DEFAULT '待发货',
+  return_track_info TEXT DEFAULT NULL,
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  FOREIGN KEY (after_sales_id) REFERENCES after_sales(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退货物流表';
+
+-- 10. 购物车主表
+CREATE TABLE shopping_cart (
+    cart_id varchar(50) PRIMARY KEY COMMENT '购物车主键ID',
+    user_id varchar(50) NOT NULL COMMENT '用户ID',
+    is_active TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否有效 0-无效 1-有效',
+    is_deleted TINYINT(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_user_id (user_id),
+    INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='购物车主表';
+
+-- 11. 购物车项表
+CREATE TABLE shopping_cart_item (
+    item_id varchar(50) PRIMARY KEY COMMENT '购物车项主键ID',
+    cart_id varchar(50) NOT NULL COMMENT '购物车ID',
+    goods_id varchar(50) NOT NULL COMMENT '商品ID',
+    spec_id varchar(50) DEFAULT NULL COMMENT '商品规格ID',
+    buy_num INT NOT NULL DEFAULT 1 COMMENT '购买数量',
+    is_checked TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否选中',
+    is_deleted TINYINT(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_cart_goods_spec (cart_id, goods_id, spec_id),
+    INDEX idx_cart_id (cart_id),
+    INDEX idx_goods_id (goods_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='购物车项表';
+
+-- 12. 商品分类表
+CREATE TABLE category (
+    id VARCHAR(50) NOT NULL COMMENT '分类ID',
+    name VARCHAR(50) NOT NULL COMMENT '分类名称',
+    parent_id VARCHAR(50) DEFAULT '0' COMMENT '父分类ID',
+    sort_order INT DEFAULT 0 COMMENT '排序值',
+    status TINYINT DEFAULT 1 COMMENT '0禁用 1启用',
+    is_deleted TINYINT DEFAULT 0 COMMENT '软删除',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id),
+    INDEX idx_parent_id (parent_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品分类表';
+
+-- 13. 品牌表
+CREATE TABLE brand (
+    id VARCHAR(50) NOT NULL COMMENT '品牌ID',
+    name VARCHAR(50) NOT NULL COMMENT '品牌名称',
+    origin VARCHAR(100) DEFAULT NULL COMMENT '品牌产地',
+    logo VARCHAR(255) DEFAULT NULL COMMENT '品牌Logo URL',
+    is_deleted TINYINT DEFAULT 0 COMMENT '软删除',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id),
+    UNIQUE INDEX idx_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='品牌表';
+
+-- 14. 商品主表
+CREATE TABLE product (
+    id VARCHAR(50) NOT NULL COMMENT '商品ID',
+    name VARCHAR(100) NOT NULL COMMENT '商品名称',
+    category_id VARCHAR(50) NOT NULL COMMENT '分类ID',
+    brand_id VARCHAR(50) NOT NULL COMMENT '品牌ID',
+    brief VARCHAR(255) DEFAULT NULL COMMENT '商品简介',
+    main_image VARCHAR(255) DEFAULT NULL COMMENT '主图URL',
+    detail_images TEXT DEFAULT NULL COMMENT '详情图JSON',
+    status SMALLINT DEFAULT 1 COMMENT '0下架，1上架',
+    is_deleted SMALLINT DEFAULT 0 COMMENT '软删除',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id),
+    INDEX idx_category_id (category_id),
+    INDEX idx_brand_id (brand_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品主表';
+
+-- 15. 规格表
+CREATE TABLE specification (
+    id VARCHAR(50) NOT NULL COMMENT '规格ID',
+    name VARCHAR(50) NOT NULL COMMENT '规格名称',
+    sort_order INT DEFAULT 0 COMMENT '排序值',
+    is_deleted TINYINT DEFAULT 0 COMMENT '软删除',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id),
+    UNIQUE INDEX idx_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='规格表';
+
+-- 16. 商品SKU表
+CREATE TABLE product_sku (
+    id VARCHAR(50) NOT NULL COMMENT 'SKU ID',
+    product_id VARCHAR(50) NOT NULL COMMENT '商品ID',
+    spec_values JSON NOT NULL COMMENT '规格值组合',
+    price DECIMAL(10,2) NOT NULL COMMENT '售价',
+    stock INT DEFAULT 0 COMMENT '库存数量',
+    warn_stock INT DEFAULT 10 COMMENT '库存预警',
+    purchase_price DECIMAL(10,2) DEFAULT NULL COMMENT '进货价',
+    purchase_time DATE DEFAULT NULL COMMENT '最近进货时间',
+    sku_code VARCHAR(100) DEFAULT NULL COMMENT 'SKU编码',
+    is_deleted TINYINT DEFAULT 0 COMMENT '软删除',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id),
+    INDEX idx_product_id (product_id),
+    FOREIGN KEY (product_id) REFERENCES product(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品SKU表';
+
+-- 17. 优惠券表
+CREATE TABLE coupons (
+    id VARCHAR(50) NOT NULL COMMENT '主键ID',
+    coupons_no VARCHAR(255) NOT NULL COMMENT '券编号',
+    coupons_name VARCHAR(255) NOT NULL COMMENT '券名称',
+    type INT NOT NULL COMMENT '1满减,2折扣,3无门槛',
+    face_value DECIMAL(10,2) NOT NULL DEFAULT 1.00 COMMENT '面额/折扣值',
+    min_spend DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT '满减门槛',
+    total_count INT NOT NULL DEFAULT 0 COMMENT '发放总量',
+    sent_count INT NOT NULL DEFAULT 0 COMMENT '已发放数量',
+    used_count INT NOT NULL DEFAULT 0 COMMENT '已使用数量',
+    valid_start_time DATETIME NOT NULL COMMENT '有效期开始',
+    valid_end_time DATETIME NOT NULL COMMENT '有效期结束',
+    status INT NOT NULL DEFAULT 1 COMMENT '0下架，1生效，2过期',
+    is_deleted INT DEFAULT 0 COMMENT '0正常,1删除',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_coupons_no (coupons_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='优惠券表';
+
+-- 18. 用户优惠券表
+CREATE TABLE user_coupons (
+  id VARCHAR(50) NOT NULL COMMENT '主键ID',
+  coupon_id VARCHAR(50) NOT NULL COMMENT '关联券模板ID',
+  user_id VARCHAR(50) NOT NULL COMMENT '关联用户ID',
+  coupon_no VARCHAR(255) NOT NULL COMMENT '优惠券编号',
+  status INT NOT NULL DEFAULT 0 COMMENT '0未使用,1已使用,2已过期',
+  get_time DATETIME NOT NULL COMMENT '领取时间',
+  use_time DATETIME NULL COMMENT '使用时间',
+  valid_end_time DATETIME NOT NULL COMMENT '有效期结束时间',
+  is_deleted INT DEFAULT 0 COMMENT '0正常,1删除',
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (id),
+  KEY idx_coupon_id (coupon_id),
+  KEY idx_user_id (user_id),
+  CONSTRAINT fk_user_coupons_coupon_id FOREIGN KEY (coupon_id) REFERENCES coupons (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户优惠券关联表';
+
+-- 19. 优惠券使用日志
+CREATE TABLE coupon_use_log (
+  id VARCHAR(50) NOT NULL COMMENT '主键ID',
+  user_coupon_id VARCHAR(50) NOT NULL COMMENT '用户优惠券ID',
+  user_id VARCHAR(50) NOT NULL COMMENT '用户ID',
+  order_id VARCHAR(50) NULL COMMENT '订单ID',
+  status INT NOT NULL DEFAULT 0 COMMENT '0失败,1成功',
+  remark VARCHAR(255) NULL COMMENT '备注',
+  is_deleted INT DEFAULT 0 COMMENT '0正常,1删除',
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (id),
+  KEY idx_user_id (user_id),
+  KEY idx_order_id (order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='优惠券使用日志';

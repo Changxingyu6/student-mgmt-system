@@ -6,6 +6,7 @@ from .crypto import generate_salt, md5_hash, verify_password
 from .jwt_utils import create_access_token, decode_access_token
 from .decorators import require_roles
 from .logger import get_logger, logger
+from .uuid_utils import generate_uuid
 
 
 def format_response(data=None, message="success", code=200):
@@ -27,5 +28,6 @@ __all__ = [
     "decode_access_token",
     "require_roles",
     "get_logger",
-    "logger"
+    "logger",
+    "generate_uuid"
 ]

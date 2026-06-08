@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from typing import List
-from services.ai_service import chat_with_ai_stream
+from services import ai_service as ai_service
 
 router = APIRouter(
     prefix="/ai",
@@ -31,6 +31,6 @@ async def chat(request: Request, chat_request: ChatRequest):
     
     # 返回流式响应
     return StreamingResponse(
-        chat_with_ai_stream(messages),
+        ai_service.chat_with_ai_stream(messages),
         media_type="text/event-stream"
     )

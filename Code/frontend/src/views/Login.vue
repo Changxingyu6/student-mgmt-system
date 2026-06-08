@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <el-card class="login-card">
-      <h2>学生管理系统</h2>
+      <h2>电商管理平台</h2>
       <el-form :model="form" :rules="rules" ref="formRef">
         <el-form-item prop="username">
           <el-input v-model="form.username" placeholder="用户名" />
@@ -46,7 +46,7 @@ const handleLogin = async () => {
   try {
     await userStore.login(form.value.username, form.value.password)
     ElMessage.success('登录成功')
-    router.push('/students')
+    router.push('/')
   } catch (error) {
     // 错误信息已由后端返回，直接显示
     const errorMsg = error?.response?.data?.detail || error?.message || '登录失败'

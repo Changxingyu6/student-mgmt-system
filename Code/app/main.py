@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from fastapi import HTTPException
-from api import ai_router, users_router, logs_router, coupon_router
+from api import user_api_router, role_api_router, address_api_router, log_api_router, ai_api_router, data_router, shopping_cart
 from utils.jwt_utils import decode_access_token
 from utils.logger import get_logger
 
@@ -17,6 +17,7 @@ WHITELIST = [
     "/docs",
     "/redoc",
     "/openapi.json",
+    "/data-analysis/users/weekly"
 ]
 
 
@@ -28,75 +29,54 @@ app = FastAPI(
 )
 
 
-# ===== 请求日志中间件 =====
-@app.middleware('http')
-async def log_middleware(request: Request, call_next):
-    """请求日志中间件：记录所有 HTTP 请求信息"""
-    # 记录请求开始时间
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    """
+    JWT 认证中间件
+    对非白名单路径进行 Token 验证
+    """
     start_time = time.time()
     
-    # 获取请求信息
-    method = request.method
-    path = request.url.path
-    query_params = str(request.url.query) if request.url.query else ""
-    client_ip = request.client.host if request.client else "unknown"
-    
-    # 记录请求开始
-    logger.info(f"请求开始 - IP: {client_ip} - {method} {path}{'?' + query_params if query_params else ''}")
-    
-    # 继续处理请求
-    try:
+    # 1. 检查是否在白名单中（前缀匹配）
+    if any(request.url.path.startswith(path) for path in WHITELIST):
         response = await call_next(request)
-        
-        # 计算耗时
-        duration = (time.time() - start_time) * 1000
-        
-        # 记录请求结束
-        logger.info(f"请求结束 - IP: {client_ip} - {method} {path} - 状态码: {response.status_code} - 耗时: {duration:.2f}ms")
-        
         return response
-    except Exception as e:
-        # 记录异常
-        duration = (time.time() - start_time) * 1000
-        logger.error(f"请求异常 - IP: {client_ip} - {method} {path} - 异常: {str(e)} - 耗时: {duration:.2f}ms")
-        raise
-
-
-# ===== 认证中间件 =====
-@app.middleware('http')
-async def auth_middleware(request: Request, call_next):
-    """全局认证中间件：白名单跳过，其他路径验证 Token 并存储用户信息"""
-    path = request.url.path
-    
-    # 1. 检查是否在白名单中
-    if any(path.startswith(w) for w in WHITELIST):
-        return await call_next(request)
     
     # 2. 获取 Token
-    auth_header = request.headers.get("Authorization", "")
+    token = None
+    if "Authorization" in request.headers:
+        auth_header = request.headers["Authorization"]
+        if auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
     
-    if not auth_header.startswith("Bearer "):
-        logger.warn(f"认证失败 - 未提供令牌 - 路径: {path}")
+    if not token:
         return JSONResponse(
             status_code=401,
-            content={"detail": "未提供认证令牌"}
+            content={"code": 401, "message": "未授权，请先登录", "data": None}
         )
     
-    token = auth_header[7:]  # 去掉 "Bearer " 前缀
-    
-    # 3. 验证 Token 并存储用户信息
+    # 3. 验证 Token
     try:
         payload = decode_access_token(token)
-        # 将用户信息存入 request state，供后续接口使用
+        if payload is None:
+            return JSONResponse(
+                status_code=401,
+                content={"code": 401, "message": "Token 无效或已过期", "data": None}
+            )
+        
+        # 将用户信息存入 request.state
         request.state.user = {
             "id": payload.get("user_id"),
             "username": payload.get("username"),
-            "role": payload.get("roles", [])[0] if payload.get("roles") else ""
+            "role": payload.get("role", "user")
         }
-        logger.debug(f"认证成功 - 用户: {request.state.user['username']} - 角色: {request.state.user['role']}")
-    except HTTPException as e:
-        logger.warn(f"认证失败 - Token无效 - 路径: {path} - 错误: {e.detail}")
-        return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
+        
+    except Exception as e:
+        logger.error(f"Token 验证失败: {str(e)}")
+        return JSONResponse(
+            status_code=401,
+            content={"code": 401, "message": "Token 验证失败", "data": None}
+        )
     
     # 4. 继续处理请求
     response = await call_next(request)
@@ -114,11 +94,13 @@ app.add_middleware(
 
 
 # ===== 注册路由 =====
-app.include_router(users_router)
-app.include_router(ai_router)
-app.include_router(logs_router)
-app.include_router(coupon_router)
-
+app.include_router(user_api_router)
+app.include_router(role_api_router)
+app.include_router(address_api_router)
+app.include_router(log_api_router)
+app.include_router(ai_api_router)
+app.include_router(data_router)
+app.include_router(shopping_cart)
 
 if __name__ == "__main__":
     import uvicorn
