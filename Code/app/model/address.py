@@ -1,0 +1,23 @@
+"""
+用户收货地址模型
+映射数据库 user_addresses 表
+"""
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from datetime import datetime
+from model import BaseModel
+
+
+class UserAddress(BaseModel):
+    __tablename__ = "user_addresses"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, comment="用户ID")
+    receiver_name = Column(String(50), nullable=False, comment="收货人姓名")
+    receiver_phone = Column(String(20), nullable=False, comment="收货人电话")
+    province = Column(String(50), comment="省份")
+    city = Column(String(50), comment="城市")
+    district = Column(String(50), comment="区县")
+    detail_address = Column(String(255), nullable=False, comment="详细地址")
+    is_default = Column(Boolean, default=False, comment="是否默认地址")
+    created_at = Column(DateTime, default=datetime.now, comment="创建时间")
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, comment="更新时间")

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from datetime import datetime
 from database import get_db
-from services.log import LoginLogService, OperationLogService
+from services import log as log_service
 from utils.logger import get_logger
 
 logger = get_logger("logs_api")
@@ -25,7 +25,7 @@ def get_login_logs(
     db: Session = Depends(get_db)
 ):
     """分页查询登录日志"""
-    result = LoginLogService.get_login_logs(
+    result = log_service.LoginLogService.get_login_logs(
         db, user_id, start_time, end_time, status, page, limit
     )
     return {"code": 200, "message": "查询成功", "data": result}
@@ -43,7 +43,7 @@ def get_operation_logs(
     db: Session = Depends(get_db)
 ):
     """分页查询操作日志"""
-    result = OperationLogService.get_operation_logs(
+    result = log_service.OperationLogService.get_operation_logs(
         db, user_id, module, action, start_time, end_time, page, limit
     )
     return {"code": 200, "message": "查询成功", "data": result}
@@ -56,7 +56,7 @@ def cleanup_old_logs(
     db: Session = Depends(get_db)
 ):
     """清理过期日志"""
-    result = OperationLogService.cleanup_old_logs(db, login_days, operation_days)
+    result = log_service.OperationLogService.cleanup_old_logs(db, login_days, operation_days)
     if not result:
         return {"code": 500, "message": "清理失败"}
     return {"code": 200, "message": "清理成功", "data": result}

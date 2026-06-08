@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from fastapi import HTTPException
-from api import ai_router, users_router, logs_router
+from api import ai_router, users_router, logs_router, addresses_router
 from utils.jwt_utils import decode_access_token
 from utils.logger import get_logger
 
@@ -115,6 +115,7 @@ app.add_middleware(
 
 # ===== 注册路由 =====
 app.include_router(users_router)
+app.include_router(addresses_router)
 app.include_router(ai_router)
 app.include_router(logs_router)
 

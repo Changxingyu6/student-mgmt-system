@@ -9,28 +9,35 @@ from model.user import User
 
 
 def get_user_by_username(db: Session, username: str) -> Optional[User]:
-    """根据用户名获取用户（包含锁定状态检查）"""
-    return db.query(User).filter(User.username == username, User.is_active == True).first()
+    """根据用户名获取用户"""
+    return db.query(User).filter(User.username == username, User.is_deleted == False).first()
 
 
 def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
     """根据ID获取用户"""
-    return db.query(User).filter(User.id == user_id, User.is_active == True).first()
+    return db.query(User).filter(User.id == user_id, User.is_deleted == False).first()
 
 
 def get_user_with_lock_status(db: Session, username: str) -> Optional[User]:
     """获取用户（包含锁定状态）"""
-    return db.query(User).filter(User.username == username, User.is_active == True).first()
+    return db.query(User).filter(User.username == username, User.is_deleted == False).first()
 
 
-def create_user(db: Session, username: str, hashed_password: str, salt: str, role: str, related_id: int = None) -> User:
+def create_user(db: Session, username: str, hashed_password: str, salt: str, 
+               nickname: str = None, phone: str = None, email: str = None,
+               user_level: str = "青铜会员", balance: float = 0.00, 
+               status: str = "active") -> User:
     """创建用户"""
     db_user = User(
         username=username,
         password=hashed_password,
         salt=salt,
-        role=role,
-        related_id=related_id
+        nickname=nickname,
+        phone=phone,
+        email=email,
+        user_level=user_level,
+        balance=balance,
+        status=status
     )
     db.add(db_user)
     db.commit()
@@ -38,19 +45,29 @@ def create_user(db: Session, username: str, hashed_password: str, salt: str, rol
     return db_user
 
 
-def update_user(db: Session, user_id: int, username: str = None, password: str = None, salt: str = None) -> Optional[User]:
+def update_user(db: Session, user_id: int, **kwargs) -> Optional[User]:
     """更新用户信息"""
     db_user = get_user_by_id(db, user_id)
     if not db_user:
         return None
     
-    if username:
-        db_user.username = username
-    if password:
-        db_user.password = password
-    if salt:
-        db_user.salt = salt
+    for key, value in kwargs.items():
+        if hasattr(db_user, key) and value is not None:
+            setattr(db_user, key, value)
     
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+def update_user_password(db: Session, user_id: int, hashed_password: str, salt: str) -> Optional[User]:
+    """更新用户密码"""
+    db_user = get_user_by_id(db, user_id)
+    if not db_user:
+        return None
+    
+    db_user.password = hashed_password
+    db_user.salt = salt
     db.commit()
     db.refresh(db_user)
     return db_user
@@ -87,11 +104,8 @@ def lock_user(db: Session, username: str, lock_minutes: int = 15) -> bool:
     if not db_user:
         return False
     
-    # 增加锁定次数
     db_user.lock_count = (db_user.lock_count or 0) + 1
-    # 计算锁定截止时间（转换为 datetime 对象）
-    lock_timestamp = datetime.now().timestamp() + lock_minutes * 60
-    db_user.lock_until = datetime.fromtimestamp(lock_timestamp)
+    db_user.lock_until = datetime.now() + datetime.timedelta(minutes=lock_minutes)
     db.commit()
     db.refresh(db_user)
     return True
@@ -105,7 +119,6 @@ def unlock_user(db: Session, user_id: int) -> Optional[User]:
     
     db_user.failed_attempts = 0
     db_user.lock_until = None
-    # 解锁时保留 lock_count，以便下次锁定仍按阶梯计算
     db.commit()
     db.refresh(db_user)
     return db_user
@@ -126,14 +139,14 @@ def reset_lock_count(db: Session, username: str) -> bool:
 def get_all_users(db: Session, page: int = 1, limit: int = 10) -> List[User]:
     """获取所有用户列表（管理员用）"""
     offset = (page - 1) * limit
-    return db.query(User).filter(User.is_active == True).offset(offset).limit(limit).all()
+    return db.query(User).filter(User.is_deleted == False).order_by(User.created_at.desc()).offset(offset).limit(limit).all()
 
 
 def get_locked_users(db: Session) -> List[User]:
     """获取所有被锁定的用户"""
     now = datetime.now()
     return db.query(User).filter(
-        User.is_active == True,
+        User.is_deleted == False,
         User.lock_until.isnot(None),
         User.lock_until > now
     ).all()
@@ -141,4 +154,81 @@ def get_locked_users(db: Session) -> List[User]:
 
 def count_users(db: Session) -> int:
     """统计用户总数"""
-    return db.query(User).filter(User.is_active == True).count()
+    return db.query(User).filter(User.is_deleted == False).count()
+
+
+def delete_user(db: Session, user_id: int) -> bool:
+    """逻辑删除用户"""
+    db_user = get_user_by_id(db, user_id)
+    if not db_user:
+        return False
+    
+    db_user.is_deleted = True
+    db.commit()
+    return True
+
+
+def freeze_user(db: Session, user_id: int) -> Optional[User]:
+    """冻结用户账户"""
+    db_user = get_user_by_id(db, user_id)
+    if not db_user:
+        return None
+    
+    db_user.status = "inactive"
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+def unfreeze_user(db: Session, user_id: int) -> Optional[User]:
+    """解冻用户账户"""
+    db_user = get_user_by_id(db, user_id)
+    if not db_user:
+        return None
+    
+    db_user.status = "active"
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+def update_balance(db: Session, user_id: int, amount: float) -> Optional[User]:
+    """更新用户余额"""
+    db_user = get_user_by_id(db, user_id)
+    if not db_user:
+        return None
+    
+    db_user.balance = (db_user.balance or 0) + amount
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+def update_user_level(db: Session, user_id: int, level: str) -> Optional[User]:
+    """更新用户等级"""
+    db_user = get_user_by_id(db, user_id)
+    if not db_user:
+        return None
+    
+    db_user.user_level = level
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+def update_user_discount(db: Session, user_id: int, discount_rate: float, expire_at: datetime = None) -> Optional[User]:
+    """更新用户折扣"""
+    db_user = get_user_by_id(db, user_id)
+    if not db_user:
+        return None
+    
+    db_user.discount_rate = discount_rate
+    db_user.discount_expire_at = expire_at
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+def check_username_exists(db: Session, username: str) -> bool:
+    """检查用户名是否存在"""
+    return db.query(User).filter(User.username == username, User.is_deleted == False).first() is not None
