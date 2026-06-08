@@ -22,7 +22,7 @@ class RoleUpdateRequest(BaseModel):
 
 class RoleResponse(BaseModel):
     """角色响应"""
-    id: int
+    id: str
     role_name: str
     description: Optional[str]
     status: str
@@ -41,4 +41,4 @@ class RoleListResponse(BaseModel):
 
 class UserRoleUpdateRequest(BaseModel):
     """用户角色更新请求"""
-    role_id: int = Field(..., description="角色ID")
+    role_id: str = Field(..., description="角色ID")

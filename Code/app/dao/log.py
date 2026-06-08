@@ -6,10 +6,12 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from datetime import datetime, timedelta
 from model.log import LoginLog, OperationLog
+from utils.uuid_utils import generate_uuid
 
 
 def create_login_log(db: Session, **kwargs) -> LoginLog:
     """创建登录日志"""
+    kwargs['id'] = generate_uuid()
     log = LoginLog(**kwargs)
     db.add(log)
     db.commit()
@@ -17,7 +19,7 @@ def create_login_log(db: Session, **kwargs) -> LoginLog:
     return log
 
 
-def get_login_logs(db: Session, user_id: int = None, start_time: datetime = None, 
+def get_login_logs(db: Session, user_id: str = None, start_time: datetime = None, 
                   end_time: datetime = None, status: str = None, page: int = 1, 
                   limit: int = 10) -> List[LoginLog]:
     """查询登录日志列表"""
@@ -36,7 +38,7 @@ def get_login_logs(db: Session, user_id: int = None, start_time: datetime = None
     return query.order_by(LoginLog.created_at.desc()).offset(offset).limit(limit).all()
 
 
-def get_login_log_count(db: Session, user_id: int = None, start_time: datetime = None, 
+def get_login_log_count(db: Session, user_id: str = None, start_time: datetime = None, 
                        end_time: datetime = None, status: str = None) -> int:
     """统计登录日志数量"""
     query = db.query(LoginLog)
@@ -55,6 +57,7 @@ def get_login_log_count(db: Session, user_id: int = None, start_time: datetime =
 
 def create_operation_log(db: Session, **kwargs) -> OperationLog:
     """创建操作日志"""
+    kwargs['id'] = generate_uuid()
     log = OperationLog(**kwargs)
     db.add(log)
     db.commit()
@@ -62,7 +65,7 @@ def create_operation_log(db: Session, **kwargs) -> OperationLog:
     return log
 
 
-def get_operation_logs(db: Session, user_id: int = None, module: str = None, 
+def get_operation_logs(db: Session, user_id: str = None, module: str = None, 
                       action: str = None, start_time: datetime = None, 
                       end_time: datetime = None, page: int = 1, 
                       limit: int = 10) -> List[OperationLog]:
@@ -84,7 +87,7 @@ def get_operation_logs(db: Session, user_id: int = None, module: str = None,
     return query.order_by(OperationLog.created_at.desc()).offset(offset).limit(limit).all()
 
 
-def get_operation_log_count(db: Session, user_id: int = None, module: str = None, 
+def get_operation_log_count(db: Session, user_id: str = None, module: str = None, 
                            action: str = None, start_time: datetime = None, 
                            end_time: datetime = None) -> int:
     """统计操作日志数量"""

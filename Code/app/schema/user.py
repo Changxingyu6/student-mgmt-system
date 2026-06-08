@@ -84,7 +84,7 @@ class DiscountSetRequest(BaseModel):
 
 class UserResponse(BaseModel):
     """用户响应模型"""
-    id: int = Field(..., description="用户ID")
+    id: str = Field(..., description="用户ID（UUID）")
     username: str = Field(..., description="用户名")
     nickname: Optional[str] = Field(None, description="昵称")
     phone: Optional[str] = Field(None, description="手机号")

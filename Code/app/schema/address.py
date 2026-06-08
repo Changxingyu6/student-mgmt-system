@@ -31,7 +31,7 @@ class AddressUpdateRequest(BaseModel):
 
 class AddressResponse(BaseModel):
     """收货地址响应"""
-    id: int = Field(..., description="地址ID")
+    id: str = Field(..., description="地址ID（UUID）")
     receiver_name: str = Field(..., description="收货人姓名")
     receiver_phone: str = Field(..., description="收货人电话")
     province: Optional[str] = Field(None, description="省份")

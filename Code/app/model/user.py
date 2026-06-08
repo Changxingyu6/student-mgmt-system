@@ -11,10 +11,11 @@ from model import BaseModel
 class User(BaseModel):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    id = Column(String(50), primary_key=True, index=True, comment="用户ID（UUID）")
     username = Column(String(50), unique=True, nullable=False, index=True, comment="用户名")
     password = Column(String(32), nullable=False, comment="密码（MD5加密，32位）")
     salt = Column(String(32), nullable=False, comment="加密盐值")
+    pay_password = Column(String(32), comment="支付密码（MD5加密）")
     nickname = Column(String(50), comment="昵称")
     phone = Column(String(20), comment="手机号")
     email = Column(String(100), comment="邮箱")
@@ -24,13 +25,13 @@ class User(BaseModel):
     points = Column(Integer, default=0, comment="会员积分")
     balance = Column(DECIMAL(10, 2), default=0.00, comment="用户余额")
     discount_rate = Column(DECIMAL(5, 2), default=1.00, comment="优惠折扣率（1.00表示原价，0.9表示9折）")
-    default_address_id = Column(Integer, comment="默认收货地址ID")
+    default_address_id = Column(String(50), comment="默认收货地址ID")
     status = Column(Enum('active', 'inactive', 'banned'), default='active', comment="账号状态")
     is_deleted = Column(Boolean, default=False, comment="逻辑删除")
     failed_attempts = Column(Integer, default=0, comment="连续登录失败次数")
     lock_until = Column(DateTime, comment="账户锁定截止时间")
     lock_count = Column(Integer, default=0, comment="连续锁定次数")
-    role_id = Column(Integer, ForeignKey("roles.id"), default=3, comment="角色ID")
+    role_id = Column(String(50), ForeignKey("roles.id"), default='3', comment="角色ID")
     
     # 关联关系
     role = relationship("Role", backref="users")

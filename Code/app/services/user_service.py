@@ -221,7 +221,7 @@ def login_for_access_token(
 
 def update_user_password(
     db: Session,
-    user_id: int,
+    user_id: str,
     old_password: str,
     new_password: str
 ) -> dict:
@@ -277,7 +277,7 @@ def register_user(
     return _convert_user_to_response(new_user)
 
 
-def get_user_by_id(db: Session, user_id: int) -> dict:
+def get_user_by_id(db: Session, user_id: str) -> dict:
     """获取用户详情"""
     logger.info(f"获取用户详情 - 用户ID: {user_id}")
     
@@ -319,7 +319,7 @@ def get_locked_users(db: Session) -> List[dict]:
     return result
 
 
-def unlock_user_account(db: Session, user_id: int) -> dict:
+def unlock_user_account(db: Session, user_id: str) -> dict:
     """解锁用户账户（管理员用）"""
     logger.info(f"解锁用户账户 - 用户ID: {user_id}")
     
@@ -367,7 +367,7 @@ def create_user(
 
 def update_user(
     db: Session,
-    user_id: int,
+    user_id: str,
     nickname: str = None,
     phone: str = None,
     email: str = None,
@@ -400,7 +400,7 @@ def update_user(
     return _convert_user_to_response(updated_user)
 
 
-def delete_user(db: Session, user_id: int) -> dict:
+def delete_user(db: Session, user_id: str) -> dict:
     """管理员删除用户（逻辑删除）"""
     logger.info(f"管理员删除用户 - 用户ID: {user_id}")
     
@@ -412,7 +412,7 @@ def delete_user(db: Session, user_id: int) -> dict:
     return {"id": user_id, "message": "删除成功"}
 
 
-def freeze_user(db: Session, user_id: int) -> dict:
+def freeze_user(db: Session, user_id: str) -> dict:
     """管理员冻结用户账户"""
     logger.info(f"管理员冻结用户 - 用户ID: {user_id}")
     
@@ -425,7 +425,7 @@ def freeze_user(db: Session, user_id: int) -> dict:
     return _convert_user_to_response(user)
 
 
-def unfreeze_user(db: Session, user_id: int) -> dict:
+def unfreeze_user(db: Session, user_id: str) -> dict:
     """管理员解冻用户账户"""
     logger.info(f"管理员解冻用户 - 用户ID: {user_id}")
     
@@ -438,7 +438,7 @@ def unfreeze_user(db: Session, user_id: int) -> dict:
     return _convert_user_to_response(user)
 
 
-def recharge_balance(db: Session, user_id: int, amount: float, reason: str = None) -> dict:
+def recharge_balance(db: Session, user_id: str, amount: float, reason: str = None) -> dict:
     """管理员为用户充值余额"""
     logger.info(f"管理员充值余额 - 用户ID: {user_id}, 金额: {amount}")
     
@@ -454,7 +454,7 @@ def recharge_balance(db: Session, user_id: int, amount: float, reason: str = Non
     return _convert_user_to_response(user)
 
 
-def deduct_balance(db: Session, user_id: int, amount: float, reason: str = None) -> dict:
+def deduct_balance(db: Session, user_id: str, amount: float, reason: str = None) -> dict:
     """管理员扣除用户余额"""
     logger.info(f"管理员扣除余额 - 用户ID: {user_id}, 金额: {amount}")
     
@@ -475,7 +475,7 @@ def deduct_balance(db: Session, user_id: int, amount: float, reason: str = None)
     return _convert_user_to_response(user)
 
 
-def upgrade_user_level(db: Session, user_id: int, level: str) -> dict:
+def upgrade_user_level(db: Session, user_id: str, level: str) -> dict:
     """管理员升级用户等级"""
     logger.info(f"管理员升级用户等级 - 用户ID: {user_id}, 等级: {level}")
     
@@ -492,7 +492,7 @@ def upgrade_user_level(db: Session, user_id: int, level: str) -> dict:
     return _convert_user_to_response(user)
 
 
-def set_user_discount(db: Session, user_id: int, discount_rate: float, expire_at: datetime = None) -> dict:
+def set_user_discount(db: Session, user_id: str, discount_rate: float, expire_at: datetime = None) -> dict:
     """管理员设置用户折扣"""
     logger.info(f"管理员设置用户折扣 - 用户ID: {user_id}, 折扣率: {discount_rate}")
     
@@ -510,7 +510,7 @@ def set_user_discount(db: Session, user_id: int, discount_rate: float, expire_at
 
 def update_user_profile(
     db: Session,
-    user_id: int,
+    user_id: str,
     nickname: str = None,
     phone: str = None,
     email: str = None,
@@ -539,3 +539,65 @@ def update_user_profile(
     logger.info(f"更新个人信息成功 - 用户ID: {user_id}")
     
     return _convert_user_to_response(updated_user)
+
+
+def verify_pay_password(db: Session, user_id: str, password: str) -> bool:
+    """
+    验证用户支付密码是否正确
+    
+    Args:
+        db: 数据库会话
+        user_id: 用户ID（UUID格式）
+        password: 用户输入的支付密码（明文）
+    
+    Returns:
+        bool: 密码正确返回True，否则返回False
+    """
+    logger.debug(f"验证支付密码 - 用户ID: {user_id}")
+    
+    result = user_repo.get_user_pay_password(db, user_id)
+    if not result:
+        logger.warn(f"验证支付密码失败 - 用户不存在 - 用户ID: {user_id}")
+        return False
+    
+    if not result["pay_password"]:
+        logger.warn(f"验证支付密码失败 - 未设置支付密码 - 用户ID: {user_id}")
+        return False
+    
+    if not verify_password(result["salt"], password, result["pay_password"]):
+        logger.warn(f"验证支付密码失败 - 密码不正确 - 用户ID: {user_id}")
+        return False
+    
+    logger.debug(f"支付密码验证成功 - 用户ID: {user_id}")
+    return True
+
+
+def check_balance_sufficient(db: Session, user_id: str, amount: float) -> bool:
+    """
+    判断用户余额是否足够支付指定金额
+    
+    Args:
+        db: 数据库会话
+        user_id: 用户ID（UUID格式）
+        amount: 待支付金额（正数）
+    
+    Returns:
+        bool: 余额充足返回True，不足返回False
+    """
+    logger.debug(f"检查余额 - 用户ID: {user_id}, 金额: {amount}")
+    
+    if amount <= 0:
+        logger.warn(f"检查余额失败 - 金额必须大于0 - 用户ID: {user_id}, 金额: {amount}")
+        return False
+    
+    balance = user_repo.get_user_balance(db, user_id)
+    if balance is None:
+        logger.warn(f"检查余额失败 - 用户不存在 - 用户ID: {user_id}")
+        return False
+    
+    if balance < amount:
+        logger.warn(f"检查余额失败 - 余额不足 - 用户ID: {user_id}, 余额: {balance}, 需要: {amount}")
+        return False
+    
+    logger.debug(f"余额检查通过 - 用户ID: {user_id}, 余额: {balance}, 需要: {amount}")
+    return True

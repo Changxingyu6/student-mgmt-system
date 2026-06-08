@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from datetime import datetime
 from model.user import User
+from utils.uuid_utils import generate_uuid
 
 
 def get_user_by_username(db: Session, username: str) -> Optional[User]:
@@ -13,7 +14,7 @@ def get_user_by_username(db: Session, username: str) -> Optional[User]:
     return db.query(User).filter(User.username == username, User.is_deleted == False).first()
 
 
-def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
+def get_user_by_id(db: Session, user_id: str) -> Optional[User]:
     """根据ID获取用户"""
     return db.query(User).filter(User.id == user_id, User.is_deleted == False).first()
 
@@ -29,6 +30,7 @@ def create_user(db: Session, username: str, hashed_password: str, salt: str,
                status: str = "active") -> User:
     """创建用户"""
     db_user = User(
+        id=generate_uuid(),
         username=username,
         password=hashed_password,
         salt=salt,
@@ -45,7 +47,7 @@ def create_user(db: Session, username: str, hashed_password: str, salt: str,
     return db_user
 
 
-def update_user(db: Session, user_id: int, **kwargs) -> Optional[User]:
+def update_user(db: Session, user_id: str, **kwargs) -> Optional[User]:
     """更新用户信息"""
     db_user = get_user_by_id(db, user_id)
     if not db_user:
@@ -60,7 +62,7 @@ def update_user(db: Session, user_id: int, **kwargs) -> Optional[User]:
     return db_user
 
 
-def update_user_password(db: Session, user_id: int, hashed_password: str, salt: str) -> Optional[User]:
+def update_user_password(db: Session, user_id: str, hashed_password: str, salt: str) -> Optional[User]:
     """更新用户密码"""
     db_user = get_user_by_id(db, user_id)
     if not db_user:
@@ -111,7 +113,7 @@ def lock_user(db: Session, username: str, lock_minutes: int = 15) -> bool:
     return True
 
 
-def unlock_user(db: Session, user_id: int) -> Optional[User]:
+def unlock_user(db: Session, user_id: str) -> Optional[User]:
     """解锁用户账户"""
     db_user = get_user_by_id(db, user_id)
     if not db_user:
@@ -157,7 +159,7 @@ def count_users(db: Session) -> int:
     return db.query(User).filter(User.is_deleted == False).count()
 
 
-def delete_user(db: Session, user_id: int) -> bool:
+def delete_user(db: Session, user_id: str) -> bool:
     """逻辑删除用户"""
     db_user = get_user_by_id(db, user_id)
     if not db_user:
@@ -168,7 +170,7 @@ def delete_user(db: Session, user_id: int) -> bool:
     return True
 
 
-def freeze_user(db: Session, user_id: int) -> Optional[User]:
+def freeze_user(db: Session, user_id: str) -> Optional[User]:
     """冻结用户账户"""
     db_user = get_user_by_id(db, user_id)
     if not db_user:
@@ -180,7 +182,7 @@ def freeze_user(db: Session, user_id: int) -> Optional[User]:
     return db_user
 
 
-def unfreeze_user(db: Session, user_id: int) -> Optional[User]:
+def unfreeze_user(db: Session, user_id: str) -> Optional[User]:
     """解冻用户账户"""
     db_user = get_user_by_id(db, user_id)
     if not db_user:
@@ -192,7 +194,7 @@ def unfreeze_user(db: Session, user_id: int) -> Optional[User]:
     return db_user
 
 
-def update_balance(db: Session, user_id: int, amount: float) -> Optional[User]:
+def update_balance(db: Session, user_id: str, amount: float) -> Optional[User]:
     """更新用户余额"""
     db_user = get_user_by_id(db, user_id)
     if not db_user:
@@ -204,7 +206,7 @@ def update_balance(db: Session, user_id: int, amount: float) -> Optional[User]:
     return db_user
 
 
-def update_user_level(db: Session, user_id: int, level: str) -> Optional[User]:
+def update_user_level(db: Session, user_id: str, level: str) -> Optional[User]:
     """更新用户等级"""
     db_user = get_user_by_id(db, user_id)
     if not db_user:
@@ -216,7 +218,7 @@ def update_user_level(db: Session, user_id: int, level: str) -> Optional[User]:
     return db_user
 
 
-def update_user_discount(db: Session, user_id: int, discount_rate: float, expire_at: datetime = None) -> Optional[User]:
+def update_user_discount(db: Session, user_id: str, discount_rate: float, expire_at: datetime = None) -> Optional[User]:
     """更新用户折扣"""
     db_user = get_user_by_id(db, user_id)
     if not db_user:
@@ -232,3 +234,34 @@ def update_user_discount(db: Session, user_id: int, discount_rate: float, expire
 def check_username_exists(db: Session, username: str) -> bool:
     """检查用户名是否存在"""
     return db.query(User).filter(User.username == username, User.is_deleted == False).first() is not None
+
+
+def get_user_pay_password(db: Session, user_id: str) -> Optional[dict]:
+    """获取用户支付密码和盐值"""
+    user = db.query(User).filter(User.id == user_id, User.is_deleted == False).first()
+    if not user:
+        return None
+    return {
+        "pay_password": user.pay_password,
+        "salt": user.salt
+    }
+
+
+def get_user_balance(db: Session, user_id: str) -> Optional[float]:
+    """获取用户余额"""
+    user = db.query(User).filter(User.id == user_id, User.is_deleted == False).first()
+    if not user:
+        return None
+    return float(user.balance or 0)
+
+
+def update_pay_password(db: Session, user_id: str, hashed_password: str) -> Optional[User]:
+    """更新用户支付密码"""
+    db_user = get_user_by_id(db, user_id)
+    if not db_user:
+        return None
+    
+    db_user.pay_password = hashed_password
+    db.commit()
+    db.refresh(db_user)
+    return db_user

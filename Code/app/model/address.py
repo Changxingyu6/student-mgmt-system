@@ -2,7 +2,7 @@
 用户收货地址模型
 映射数据库 user_addresses 表
 """
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey
 from datetime import datetime
 from model import BaseModel
 
@@ -10,8 +10,8 @@ from model import BaseModel
 class UserAddress(BaseModel):
     __tablename__ = "user_addresses"
     
-    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, comment="用户ID")
+    id = Column(String(50), primary_key=True, index=True, comment="地址ID（UUID）")
+    user_id = Column(String(50), ForeignKey('users.id'), nullable=False, comment="用户ID")
     receiver_name = Column(String(50), nullable=False, comment="收货人姓名")
     receiver_phone = Column(String(20), nullable=False, comment="收货人电话")
     province = Column(String(50), comment="省份")

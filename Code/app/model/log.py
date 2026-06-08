@@ -2,7 +2,7 @@
 日志模型
 记录登录日志和操作日志
 """
-from sqlalchemy import Column, Integer, String, DateTime, Text, Enum
+from sqlalchemy import Column, String, DateTime, Text, Enum
 from datetime import datetime
 from model import BaseModel
 
@@ -11,8 +11,8 @@ class LoginLog(BaseModel):
     """登录日志模型"""
     __tablename__ = "login_logs"
     
-    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    user_id = Column(Integer, comment="用户ID（登录成功时记录）")
+    id = Column(String(50), primary_key=True, index=True, comment="日志ID（UUID）")
+    user_id = Column(String(50), comment="用户ID（登录成功时记录）")
     username = Column(String(50), comment="登录用户名")
     ip_address = Column(String(50), comment="登录IP")
     user_agent = Column(String(255), comment="浏览器信息")
@@ -29,12 +29,12 @@ class OperationLog(BaseModel):
     """操作日志模型"""
     __tablename__ = "operation_logs"
     
-    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    user_id = Column(Integer, nullable=False, comment="操作用户ID")
+    id = Column(String(50), primary_key=True, index=True, comment="日志ID（UUID）")
+    user_id = Column(String(50), nullable=False, comment="操作用户ID")
     username = Column(String(50), comment="操作用户名")
     module = Column(String(50), comment="操作模块")
     action = Column(String(50), comment="操作类型")
-    target_id = Column(Integer, comment="操作对象ID")
+    target_id = Column(String(50), comment="操作对象ID")
     target_name = Column(String(255), comment="操作对象名称")
     before_data = Column(Text, comment="操作前数据（JSON）")
     after_data = Column(Text, comment="操作后数据（JSON）")

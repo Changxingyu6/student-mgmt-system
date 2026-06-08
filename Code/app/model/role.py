@@ -2,7 +2,7 @@
 角色模型
 映射数据库 roles 表，用于角色权限管理
 """
-from sqlalchemy import Column, Integer, String, DateTime, Enum
+from sqlalchemy import Column, String, DateTime, Enum
 from datetime import datetime
 from model import BaseModel
 
@@ -10,7 +10,7 @@ from model import BaseModel
 class Role(BaseModel):
     __tablename__ = "roles"
 
-    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    id = Column(String(50), primary_key=True, index=True, comment="角色ID（UUID）")
     role_name = Column(String(50), unique=True, nullable=False, index=True, comment="角色名称")
     description = Column(String(255), comment="角色描述")
     status = Column(Enum('active', 'inactive'), default='active', comment="状态")
