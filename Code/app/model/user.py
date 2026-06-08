@@ -2,7 +2,8 @@
 用户模型
 映射数据库 users 表，用于用户认证
 """
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, DECIMAL, Enum
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, DECIMAL, Enum, ForeignKey
+from sqlalchemy.orm import relationship
 from datetime import datetime
 from model import BaseModel
 
@@ -29,3 +30,7 @@ class User(BaseModel):
     failed_attempts = Column(Integer, default=0, comment="连续登录失败次数")
     lock_until = Column(DateTime, comment="账户锁定截止时间")
     lock_count = Column(Integer, default=0, comment="连续锁定次数")
+    role_id = Column(Integer, ForeignKey("roles.id"), default=3, comment="角色ID")
+    
+    # 关联关系
+    role = relationship("Role", backref="users")

@@ -4,10 +4,11 @@
 """
 from fastapi import APIRouter, Request, Depends, Form, Body
 from sqlalchemy.orm import Session
-from services import user as user_service
+from services import user_service
 from utils import format_response, require_roles
 from database import get_db
 from schema.user import *
+from schema.role import UserRoleUpdateRequest
 
 router = APIRouter(prefix="/users", tags=["用户管理"])
 
@@ -250,7 +251,7 @@ def upgrade_user_level(
 
 
 @router.post("/{user_id}/discount", summary="设置用户折扣")
-@require_roles(["admin"])
+@require_roles()  # 只有 admin 能访问
 def set_user_discount(
     request: Request,
     user_id: int,
@@ -262,3 +263,23 @@ def set_user_discount(
         db, user_id, discount_request.discount_rate, discount_request.expire_at
     )
     return format_response(data=result, message="设置成功")
+
+
+@router.post("/{user_id}/role", summary="修改用户角色")
+@require_roles()  # 只有 admin 能访问
+def update_user_role(
+    request: Request,
+    user_id: int,
+    role_request: UserRoleUpdateRequest = Body(...),
+    db: Session = Depends(get_db)
+):
+    """修改用户角色（仅管理员可访问）"""
+    from services import role_service
+    try:
+        success = role_service.update_user_role(db, user_id, role_request.role_id)
+        if success:
+            return format_response(message="角色修改成功")
+        else:
+            raise HTTPException(status_code=400, detail="角色修改失败")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

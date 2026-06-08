@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from utils import format_response
-from services import address as address_service
+from services import address_service
 from schema.address import *
 
 router = APIRouter(prefix="/addresses", tags=["收货地址"])

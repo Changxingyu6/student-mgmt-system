@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from datetime import datetime
 from database import get_db
-from services import log as log_service
+from services import log_service
 from utils.logger import get_logger
 
 logger = get_logger("logs_api")

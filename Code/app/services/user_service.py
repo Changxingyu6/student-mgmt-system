@@ -7,11 +7,11 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from datetime import datetime
 from fastapi import HTTPException, status
-from dao import user as user_repo
+from dao import user_dao as user_repo
 from utils import generate_salt, md5_hash, verify_password, create_access_token
 from utils.logger import get_logger
 from utils.password_policy import validate_password
-from services.log import LoginLogService
+from services.log_service import LoginLogService
 from schema.user import UserResponse
 
 # 获取日志记录器
@@ -187,11 +187,15 @@ def login_for_access_token(
     user_repo.reset_failed_attempts(db, username)
     user_repo.reset_lock_count(db, username)
     
+    # 获取用户角色
+    from services import role_service
+    user_role = role_service.get_user_role(db, user["id"]) or "user"
+    
     access_token = create_access_token(
         data={
             "sub": str(user["id"]),
             "username": user["username"],
-            "roles": ["admin"],
+            "role": user_role,
             "user_id": user["id"]
         }
     )

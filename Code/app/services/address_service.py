@@ -5,7 +5,7 @@
 from sqlalchemy.orm import Session
 from typing import List, Dict, Optional
 from fastapi import HTTPException, status
-from dao import address as address_repo
+from dao import address_dao as address_repo
 from utils.logger import get_logger
 from schema.address import *
 
