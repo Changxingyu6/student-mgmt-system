@@ -1,15 +1,17 @@
-# 学生管理系统
+# 电商管理平台
 
-基于 FastAPI 的学生管理系统，采用三层架构（Controller-Service-DAO），使用 SQLAlchemy ORM 进行数据库操作。
+基于 FastAPI 的电商管理平台，采用三层架构（Controller-Service-DAO），使用 SQLAlchemy ORM 进行数据库操作。
 
 ## 📋 功能模块
 
-- **学生基本信息管理** - 学生信息增删改查
-- **考核成绩管理** - 成绩录入与管理
-- **就业信息管理** - 就业信息管理
-- **班级/老师管理** - 班级和教师信息管理
-- **顾问管理** - 顾问信息管理
-- **统计分析** - 复杂查询统计
+- **用户管理** - 用户信息增删改查、等级管理、积分管理
+- **商品管理** - 商品信息管理、分类管理、规格管理、库存管理
+- **订单管理** - 订单创建、状态流转、售后管理
+- **购物车管理** - 购物车增删改查
+- **支付管理** - 支付记录、支付状态管理
+- **物流管理** - 物流信息录入、轨迹追踪
+- **营销活动** - 优惠券管理、满减活动、限时秒杀
+- **数据统计** - 用户统计、商品统计、订单统计、营销统计
 - **用户认证** - JWT Token 认证
 
 ## 🛠️ 技术栈
@@ -39,12 +41,12 @@ pip install -r requirements.txt
 
 1. 创建数据库：
 ```sql
-CREATE DATABASE student_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE ecommerce_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 2. 导入数据表：
 ```bash
-mysql -u root -p student_db < ../资料/student_mgmt_init_database.sql
+mysql -u root -p ecommerce_db < ../资料/ecommerce_init_database.sql
 ```
 
 3. 修改 `.env` 文件：
@@ -53,7 +55,7 @@ DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=your_password
-DB_NAME=student_db
+DB_NAME=ecommerce_db
 SECRET_KEY=your_secret_key
 ```
 
@@ -71,7 +73,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 ## 📁 项目结构
 
 ```
-student-mgmt-system/
+ecommerce-platform/
 ├── Code/
 │   ├── app/
 │   │   ├── main.py           # 主入口
@@ -80,26 +82,32 @@ student-mgmt-system/
 │   │   ├── deps.py           # 依赖注入定义（公共依赖）
 │   │   │
 │   │   ├── api/              # API 路由层（Controller）
-│   │   │   ├── students.py   # 学生路由
-│   │   │   ├── auth.py       # 认证路由
+│   │   │   ├── users.py      # 用户路由
+│   │   │   ├── goods.py      # 商品路由
+│   │   │   ├── orders.py     # 订单路由
 │   │   │   └── __init__.py
 │   │   │
 │   │   ├── services/         # 业务逻辑层（Service）
-│   │   │   ├── student.py
-│   │   │   └── auth.py
+│   │   │   ├── user.py
+│   │   │   ├── goods.py
+│   │   │   ├── order.py
+│   │   │   └── activity.py
 │   │   │
 │   │   ├── dao/              # 数据访问层（DAO）
-│   │   │   ├── student.py
-│   │   │   └── user.py
+│   │   │   ├── user.py
+│   │   │   ├── goods.py
+│   │   │   └── order.py
 │   │   │
 │   │   ├── model/            # SQLAlchemy 模型
 │   │   │   ├── __init__.py   # BaseModel 基类（含 create_dt, update_dt）
-│   │   │   ├── student.py
-│   │   │   └── user.py
+│   │   │   ├── user.py
+│   │   │   ├── goods.py
+│   │   │   └── order.py
 │   │   │
 │   │   ├── scheme/           # Pydantic 数据验证
-│   │   │   ├── student.py
-│   │   │   └── auth.py
+│   │   │   ├── user.py
+│   │   │   ├── goods.py
+│   │   │   └── order.py
 │   │   │
 │   │   └── utils/            # 工具函数
 │   │       └── __init__.py
@@ -108,11 +116,12 @@ student-mgmt-system/
 ├── frontend/                 # Vue3 前端项目
 ├── 资料/                    # 文档资料
 │   ├── pdf_content.txt
-│   ├── student_mgmt_init_database.sql
+│   ├── ecommerce_init_database.sql
 │   ├── 开发规范.md
 │   ├── 分工清单.md
 │   ├── GitHub入门指南.md
-│   └── ER图说明.md
+│   ├── ER图说明.md
+│   └── 电商管理平台业务逻辑.md
 └── .gitignore
 ```
 
@@ -144,12 +153,12 @@ student-mgmt-system/
 
 ```python
 # Service 层注入数据库
-def get_all_students(
+def get_all_users(
     page: int = 1,
     db: Session = Depends(get_database)
 ):
-    students = student_dao.get_students(db, page)
-    return students
+    users = user_dao.get_users(db, page)
+    return users
 ```
 
 ### 用户认证
@@ -169,31 +178,49 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 | 成员 | 负责模块 | 需要创建的文件 |
 |------|---------|---------------|
 | **组长** | 项目框架 + 文档 | ✅ 已完成 |
-| A | 学生基本信息管理 | `dao/student.py`<br>`services/student.py`<br>`api/students.py` |
-| B | 考核成绩管理 | `dao/score.py`<br>`services/score.py`<br>`api/scores.py` |
-| C | 就业信息管理 | `dao/employment.py`<br>`services/employment.py`<br>`api/employments.py` |
-| D | 班级/老师管理 | `dao/class.py`<br>`dao/teacher.py`<br>`services/class.py`<br>`api/classes.py` |
-| E | 用户认证 + 统计分析 | `dao/user.py`<br>`services/auth.py`<br>`api/auth.py`<br>`api/statistics.py` |
+| A | 用户管理 | `dao/user.py`<br>`services/user.py`<br>`api/users.py` |
+| B | 商品管理 | `dao/goods.py`<br>`services/goods.py`<br>`api/goods.py` |
+| C | 订单管理 | `dao/order.py`<br>`services/order.py`<br>`api/orders.py` |
+| D | 营销活动 | `dao/activity.py`<br>`services/activity.py`<br>`api/activities.py` |
+| E | 数据统计 + 支付物流 | `api/statistics.py`<br>`api/payments.py`<br>`api/logistics.py` |
 
 ## 📝 API 接口
 
-### 认证接口
+### 用户认证接口
 
 | 方法 | 路径 | 描述 | 是否需要认证 |
 |------|------|------|-------------|
-| POST | /auth/login | 用户登录 | ❌ |
-| GET | /auth/me | 获取当前用户 | ✅ |
-| PUT | /auth/me | 更新个人信息 | ✅ |
+| POST | /users/login | 用户登录 | ❌ |
+| POST | /users/register | 用户注册 | ❌ |
+| GET | /users/me | 获取当前用户 | ✅ |
+| PUT | /users/me | 更新个人信息 | ✅ |
 
-### 学生管理
+### 用户管理
 
 | 方法 | 路径 | 描述 | 是否需要认证 |
 |------|------|------|-------------|
-| GET | /students | 获取学生列表 | ✅ |
-| POST | /students | 创建学生 | ✅ |
-| GET | /students/{id} | 获取单个学生 | ✅ |
-| PUT | /students/{id} | 更新学生信息 | ✅ |
-| DELETE | /students/{id} | 删除学生 | ✅ |
+| GET | /users | 获取用户列表 | ✅（管理员） |
+| GET | /users/locked | 获取锁定用户 | ✅（管理员） |
+| POST | /users/{user_id}/unlock | 解锁用户 | ✅（管理员） |
+
+### 商品管理
+
+| 方法 | 路径 | 描述 | 是否需要认证 |
+|------|------|------|-------------|
+| GET | /goods | 获取商品列表 | ✅ |
+| POST | /goods | 创建商品 | ✅ |
+| GET | /goods/{id} | 获取单个商品 | ✅ |
+| PUT | /goods/{id} | 更新商品信息 | ✅ |
+| DELETE | /goods/{id} | 删除商品 | ✅ |
+
+### 订单管理
+
+| 方法 | 路径 | 描述 | 是否需要认证 |
+|------|------|------|-------------|
+| GET | /orders | 获取订单列表 | ✅ |
+| POST | /orders | 创建订单 | ✅ |
+| GET | /orders/{id} | 获取订单详情 | ✅ |
+| PUT | /orders/{id} | 更新订单状态 | ✅ |
 
 ## 📄 开发指南
 
@@ -227,12 +254,13 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 
 ### 示例代码
 
-参考现有实现：`model/student.py`、`scheme/student.py`、`dao/student.py`、`services/student.py`、`api/students.py`
+参考现有实现：`model/user.py`、`scheme/user.py`、`dao/user.py`、`services/user.py`、`api/users.py`
 
 ## 📄 相关文档
 
 - 需求文档：`资料/pdf_content.txt`
-- 数据库设计：`资料/student_mgmt_init_database.sql`
+- 数据库设计：`资料/ecommerce_init_database.sql`
+- 业务逻辑：`资料/电商管理平台业务逻辑.md`
 - 开发规范：`资料/开发规范.md`
 - 分工清单：`资料/分工清单.md`
 - ER 图说明：`资料/ER图说明.md`
@@ -253,8 +281,8 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 | 用户名 | 密码 | 角色 |
 |--------|------|------|
 | admin | 123456 | 管理员 |
-| teacher1 | 123456 | 教师 |
-| student1 | 123456 | 学生 |
+| user1 | 123456 | 普通用户 |
+| user2 | 123456 | 普通用户 |
 
 ## 📜 许可证
 
