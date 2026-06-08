@@ -28,14 +28,14 @@ def get_login_logs(db: Session, user_id: str = None, start_time: datetime = None
     if user_id:
         query = query.filter(LoginLog.user_id == user_id)
     if start_time:
-        query = query.filter(LoginLog.created_at >= start_time)
+        query = query.filter(LoginLog.create_time >= start_time)
     if end_time:
-        query = query.filter(LoginLog.created_at <= end_time)
+        query = query.filter(LoginLog.create_time <= end_time)
     if status:
         query = query.filter(LoginLog.status == status)
     
     offset = (page - 1) * limit
-    return query.order_by(LoginLog.created_at.desc()).offset(offset).limit(limit).all()
+    return query.order_by(LoginLog.create_time.desc()).offset(offset).limit(limit).all()
 
 
 def get_login_log_count(db: Session, user_id: str = None, start_time: datetime = None, 
@@ -46,9 +46,9 @@ def get_login_log_count(db: Session, user_id: str = None, start_time: datetime =
     if user_id:
         query = query.filter(LoginLog.user_id == user_id)
     if start_time:
-        query = query.filter(LoginLog.created_at >= start_time)
+        query = query.filter(LoginLog.create_time >= start_time)
     if end_time:
-        query = query.filter(LoginLog.created_at <= end_time)
+        query = query.filter(LoginLog.create_time <= end_time)
     if status:
         query = query.filter(LoginLog.status == status)
     
@@ -79,12 +79,12 @@ def get_operation_logs(db: Session, user_id: str = None, module: str = None,
     if action:
         query = query.filter(OperationLog.action == action)
     if start_time:
-        query = query.filter(OperationLog.created_at >= start_time)
+        query = query.filter(OperationLog.create_time >= start_time)
     if end_time:
-        query = query.filter(OperationLog.created_at <= end_time)
+        query = query.filter(OperationLog.create_time <= end_time)
     
     offset = (page - 1) * limit
-    return query.order_by(OperationLog.created_at.desc()).offset(offset).limit(limit).all()
+    return query.order_by(OperationLog.create_time.desc()).offset(offset).limit(limit).all()
 
 
 def get_operation_log_count(db: Session, user_id: str = None, module: str = None, 
@@ -100,9 +100,9 @@ def get_operation_log_count(db: Session, user_id: str = None, module: str = None
     if action:
         query = query.filter(OperationLog.action == action)
     if start_time:
-        query = query.filter(OperationLog.created_at >= start_time)
+        query = query.filter(OperationLog.create_time >= start_time)
     if end_time:
-        query = query.filter(OperationLog.created_at <= end_time)
+        query = query.filter(OperationLog.create_time <= end_time)
     
     return query.count()
 
@@ -110,7 +110,7 @@ def get_operation_log_count(db: Session, user_id: str = None, module: str = None
 def delete_old_login_logs(db: Session, days: int = 90) -> int:
     """删除指定天数之前的登录日志"""
     cutoff_time = datetime.now() - timedelta(days=days)
-    deleted_count = db.query(LoginLog).filter(LoginLog.created_at < cutoff_time).delete()
+    deleted_count = db.query(LoginLog).filter(LoginLog.create_time < cutoff_time).delete()
     db.commit()
     return deleted_count
 
@@ -118,6 +118,6 @@ def delete_old_login_logs(db: Session, days: int = 90) -> int:
 def delete_old_operation_logs(db: Session, days: int = 180) -> int:
     """删除指定天数之前的操作日志"""
     cutoff_time = datetime.now() - timedelta(days=days)
-    deleted_count = db.query(OperationLog).filter(OperationLog.created_at < cutoff_time).delete()
+    deleted_count = db.query(OperationLog).filter(OperationLog.create_time < cutoff_time).delete()
     db.commit()
     return deleted_count

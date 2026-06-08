@@ -26,8 +26,8 @@ class RoleResponse(BaseModel):
     role_name: str
     description: Optional[str]
     status: str
-    created_at: datetime
-    updated_at: datetime
+    create_time: datetime
+    update_time: datetime
 
     class Config:
         orm_mode = True

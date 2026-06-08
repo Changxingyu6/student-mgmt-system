@@ -141,7 +141,7 @@ def reset_lock_count(db: Session, username: str) -> bool:
 def get_all_users(db: Session, page: int = 1, limit: int = 10) -> List[User]:
     """获取所有用户列表（管理员用）"""
     offset = (page - 1) * limit
-    return db.query(User).filter(User.is_deleted == False).order_by(User.created_at.desc()).offset(offset).limit(limit).all()
+    return db.query(User).filter(User.is_deleted == False).order_by(User.create_time.desc()).offset(offset).limit(limit).all()
 
 
 def get_locked_users(db: Session) -> List[User]:

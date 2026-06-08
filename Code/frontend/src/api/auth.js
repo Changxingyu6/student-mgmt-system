@@ -46,3 +46,12 @@ export function updateProfile(data) {
     data
   })
 }
+
+// 更新用户信息（别名）
+export function updateUserInfo(data) {
+  return request({
+    url: '/users/me',
+    method: 'put',
+    data
+  })
+}

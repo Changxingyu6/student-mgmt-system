@@ -16,7 +16,7 @@ def get_address_by_id(db: Session, address_id: str) -> Optional[UserAddress]:
 def get_user_addresses(db: Session, user_id: str) -> List[UserAddress]:
     """获取用户所有地址"""
     return db.query(UserAddress).filter(UserAddress.user_id == user_id).order_by(
-        UserAddress.is_default.desc(), UserAddress.created_at.desc()
+        UserAddress.is_default.desc(), UserAddress.create_time.desc()
     ).all()
 
 

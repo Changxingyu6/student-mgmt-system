@@ -100,8 +100,8 @@ class UserResponse(BaseModel):
     is_locked: bool = Field(..., description="是否被锁定")
     failed_attempts: int = Field(..., description="登录失败次数")
     lock_count: int = Field(..., description="锁定次数")
-    created_at: datetime = Field(..., description="创建时间")
-    updated_at: datetime = Field(..., description="更新时间")
+    create_time: datetime = Field(..., description="创建时间")
+    update_time: datetime = Field(..., description="更新时间")
 
 
 class UserListResponse(BaseModel):

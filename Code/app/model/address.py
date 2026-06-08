@@ -20,5 +20,5 @@ class UserAddress(Base):
     detail_address = Column(String(255), nullable=False, comment="详细地址")
     is_default = Column(Boolean, default=False, comment="是否默认地址")
     is_deleted = Column(Boolean, default=False, comment="逻辑删除")
-    created_time = Column(DateTime, default=datetime.now, comment="创建时间")
-    updated_time = Column(DateTime, default=datetime.now, onupdate=datetime.now, comment="更新时间")
+    create_time = Column(DateTime, default=datetime.now, comment="创建时间")
+    update_time = Column(DateTime, default=datetime.now, onupdate=datetime.now, comment="更新时间")

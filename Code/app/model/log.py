@@ -19,8 +19,8 @@ class LoginLog(Base):
     login_type = Column(Enum('password', 'sms', 'wechat', 'alipay'), default='password', comment='登录方式')
     status = Column(Enum('success', 'failed'), comment="登录状态")
     error_message = Column(String(255), comment="错误信息")
-    created_time = Column(DateTime, default=datetime.now, nullable=False, comment="创建时间")
-    updated_time = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False, comment="更新时间")
+    create_time = Column(DateTime, default=datetime.now, nullable=False, comment="创建时间")
+    update_time = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False, comment="更新时间")
     
     __table_args__ = {
         'comment': '登录日志表'
@@ -41,8 +41,8 @@ class OperationLog(Base):
     before_data = Column(Text, comment="操作前数据（JSON）")
     after_data = Column(Text, comment="操作后数据（JSON）")
     ip_address = Column(String(50), comment="操作IP")
-    created_at = Column(DateTime, default=datetime.now, nullable=False, comment="创建时间")
-    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False, comment="更新时间")
+    create_time = Column(DateTime, default=datetime.now, nullable=False, comment="创建时间")
+    update_time = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False, comment="更新时间")
     
     __table_args__ = {
         'comment': '操作日志表'

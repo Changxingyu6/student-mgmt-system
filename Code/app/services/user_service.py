@@ -79,8 +79,8 @@ def _convert_user_to_response(user) -> dict:
         "is_locked": is_locked,
         "failed_attempts": user.failed_attempts or 0,
         "lock_count": user.lock_count or 0,
-        "created_at": user.created_at,
-        "updated_at": user.updated_at
+        "create_time": user.create_time,
+        "update_time": user.update_time
     }
 
 

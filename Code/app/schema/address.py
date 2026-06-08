@@ -39,7 +39,7 @@ class AddressResponse(BaseModel):
     district: Optional[str] = Field(None, description="区县")
     detail_address: str = Field(..., description="详细地址")
     is_default: bool = Field(..., description="是否默认地址")
-    created_at: datetime = Field(..., description="创建时间")
+    create_time: datetime = Field(..., description="创建时间")
 
 
 class AddressListResponse(BaseModel):

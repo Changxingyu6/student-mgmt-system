@@ -32,8 +32,8 @@ class User(Base):
     lock_until = Column(DateTime, comment="账户锁定截止时间")
     lock_count = Column(Integer, default=0, comment="连续锁定次数")
     role_id = Column(String(50), ForeignKey("roles.id"), default='3', comment="角色ID")
-    created_time = Column(DateTime, default=datetime.now, nullable=False, comment="创建时间")
-    updated_time = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False, comment="更新时间")
+    create_time = Column(DateTime, default=datetime.now, nullable=False, comment="创建时间")
+    update_time = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False, comment="更新时间")
     
     # 关联关系
     role = relationship("Role", backref="users")

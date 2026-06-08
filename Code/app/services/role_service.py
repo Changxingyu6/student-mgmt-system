@@ -17,8 +17,8 @@ def _convert_role_to_response(role: Role) -> RoleResponse:
         role_name=role.role_name,
         description=role.description,
         status=role.status,
-        created_at=role.created_at,
-        updated_at=role.updated_at
+        create_time=role.create_time,
+        update_time=role.update_time
     )
 
 

@@ -62,7 +62,7 @@ class LoginLogService:
                 "login_type": log.login_type,
                 "status": log.status,
                 "error_message": log.error_message,
-                "created_at": log.created_at.strftime("%Y-%m-%d %H:%M:%S") if log.created_at else None
+                "create_time": log.create_time.strftime("%Y-%m-%d %H:%M:%S") if log.create_time else None
             })
         
         return {
@@ -120,7 +120,7 @@ class OperationLogService:
                 "before_data": log.before_data,
                 "after_data": log.after_data,
                 "ip_address": log.ip_address,
-                "created_at": log.created_at.strftime("%Y-%m-%d %H:%M:%S") if log.created_at else None
+                "create_time": log.create_time.strftime("%Y-%m-%d %H:%M:%S") if log.create_time else None
             })
         
         return {
