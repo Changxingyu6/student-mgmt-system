@@ -9,6 +9,7 @@ from utils.uuid_utils import generate_uuid
 from model.shopping_cart_item import ShoppingCartItem
 
 
+
 def _item_to_dict(item: ShoppingCartItem) -> Dict:
     """将购物车项对象转换为字典"""
     return {

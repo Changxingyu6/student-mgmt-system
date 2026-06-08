@@ -9,6 +9,7 @@ from utils.uuid_utils import generate_uuid
 from model.shopping_cart import ShoppingCart
 
 
+
 def get_cart_by_user_id(db: Session, user_id: str) -> Optional[ShoppingCart]:
     """根据用户ID获取购物车"""
     return db.query(ShoppingCart).filter(

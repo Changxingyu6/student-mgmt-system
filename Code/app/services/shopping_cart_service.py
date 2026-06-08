@@ -9,6 +9,7 @@ from dao import shopping_cart_dao as cart_dao
 from dao import shopping_cart_item_dao as item_dao
 from utils.logger import get_logger
 
+
 logger = get_logger("shopping_cart")
 
 
