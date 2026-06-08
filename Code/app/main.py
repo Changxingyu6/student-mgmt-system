@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from fastapi import HTTPException
-from api import user_api_router, role_api_router, address_api_router, log_api_router, ai_api_router, data_router, shopping_cart
+from api import user_api_router, role_api_router, address_api_router, log_api_router, ai_api_router, data_router, shopping_cart,coupon_api_router
 from utils.jwt_utils import decode_access_token
 from utils.logger import get_logger
 
