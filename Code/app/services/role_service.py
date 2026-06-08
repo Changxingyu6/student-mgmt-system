@@ -121,11 +121,11 @@ def update_user_role(db: Session, user_id: int, role_id: int) -> bool:
     return True
 
 
-def get_user_role(db: Session, user_id: int) -> Optional[str]:
+def get_user_role(db: Session, user_id: str) -> Optional[str]:
     """获取用户角色名称"""
-    from dao import user as user_repo
+    from dao.user_dao import get_user_by_id
     
-    user = user_repo.get_user_by_id(db, user_id)
+    user = get_user_by_id(db, user_id)
     if user and user.role:
         return user.role.role_name
     return None

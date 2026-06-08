@@ -8,11 +8,12 @@ from database import get_db
 from utils import format_response
 from services import address_service
 from schema.address import *
+from schema.base import ApiResponse
 
 router = APIRouter(prefix="/addresses", tags=["收货地址"])
 
 
-@router.get("", response_model=AddressListResponse, summary="获取用户地址列表")
+@router.get("", response_model=ApiResponse[AddressListResponse], summary="获取用户地址列表")
 def get_address_list(
     request: Request,
     db: Session = Depends(get_db)

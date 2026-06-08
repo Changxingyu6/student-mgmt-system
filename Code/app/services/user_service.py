@@ -74,7 +74,6 @@ def _convert_user_to_response(user) -> dict:
         "points": user.points or 0,
         "balance": float(user.balance or 0),
         "discount_rate": float(user.discount_rate or 1.0),
-        "discount_expire_at": user.discount_expire_at,
         "status": user.status,
         "is_locked": is_locked,
         "failed_attempts": user.failed_attempts or 0,
@@ -492,14 +491,14 @@ def upgrade_user_level(db: Session, user_id: str, level: str) -> dict:
     return _convert_user_to_response(user)
 
 
-def set_user_discount(db: Session, user_id: str, discount_rate: float, expire_at: datetime = None) -> dict:
+def set_user_discount(db: Session, user_id: str, discount_rate: float) -> dict:
     """管理员设置用户折扣"""
     logger.info(f"管理员设置用户折扣 - 用户ID: {user_id}, 折扣率: {discount_rate}")
     
     if discount_rate <= 0 or discount_rate > 1:
         raise HTTPException(status_code=400, detail="折扣率必须在0到1之间")
     
-    user = user_repo.update_user_discount(db, user_id, discount_rate, expire_at)
+    user = user_repo.update_user_discount(db, user_id, discount_rate)
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     

@@ -1,6 +1,6 @@
 <template>
   <div class="header">
-    <h3>学生管理系统</h3>
+    <h3>电商管理平台</h3>
     <div class="user-info">
       <el-dropdown>
         <span class="username">

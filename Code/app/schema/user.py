@@ -79,7 +79,6 @@ class BalanceOperationRequest(BaseModel):
 class DiscountSetRequest(BaseModel):
     """设置折扣请求"""
     discount_rate: float = Field(..., description="折扣率", ge=0.1, le=1.0)
-    expire_at: Optional[datetime] = Field(None, description="有效期")
 
 
 class UserResponse(BaseModel):
@@ -95,7 +94,6 @@ class UserResponse(BaseModel):
     points: int = Field(..., description="会员积分")
     balance: float = Field(..., description="用户余额")
     discount_rate: float = Field(..., description="优惠折扣率")
-    discount_expire_at: Optional[datetime] = Field(None, description="折扣有效期")
     status: str = Field(..., description="账号状态")
     is_locked: bool = Field(..., description="是否被锁定")
     failed_attempts: int = Field(..., description="登录失败次数")

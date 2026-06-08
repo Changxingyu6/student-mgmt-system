@@ -218,14 +218,13 @@ def update_user_level(db: Session, user_id: str, level: str) -> Optional[User]:
     return db_user
 
 
-def update_user_discount(db: Session, user_id: str, discount_rate: float, expire_at: datetime = None) -> Optional[User]:
+def update_user_discount(db: Session, user_id: str, discount_rate: float) -> Optional[User]:
     """更新用户折扣"""
     db_user = get_user_by_id(db, user_id)
     if not db_user:
         return None
     
     db_user.discount_rate = discount_rate
-    db_user.discount_expire_at = expire_at
     db.commit()
     db.refresh(db_user)
     return db_user
