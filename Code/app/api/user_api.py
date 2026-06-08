@@ -2,7 +2,7 @@
 用户管理 API 路由
 包含用户认证、用户管理等相关接口
 """
-from fastapi import APIRouter, Request, Depends, Form, Body
+from fastapi import APIRouter, Request, Depends, Form, Body, HTTPException
 from sqlalchemy.orm import Session
 from services import user_service
 from utils import format_response, require_roles
@@ -220,49 +220,6 @@ def recharge_balance(
         db, user_id, balance_request.amount, balance_request.reason
     )
     return format_response(data=result, message="充值成功")
-
-
-@router.post("/{user_id}/deduct", summary="扣除余额")
-@require_roles(["admin"])
-def deduct_balance(
-    request: Request,
-    user_id: int,
-    balance_request: BalanceOperationRequest = Body(...),
-    db: Session = Depends(get_db)
-):
-    """扣除用户余额（仅管理员可访问）"""
-    result = user_service.deduct_balance(
-        db, user_id, balance_request.amount, balance_request.reason
-    )
-    return format_response(data=result, message="扣除成功")
-
-
-@router.post("/{user_id}/upgrade", summary="升级用户等级")
-@require_roles(["admin"])
-def upgrade_user_level(
-    request: Request,
-    user_id: int,
-    user_level: str = Form(...),
-    db: Session = Depends(get_db)
-):
-    """升级用户等级（仅管理员可访问）"""
-    result = user_service.upgrade_user_level(db, user_id, user_level)
-    return format_response(data=result, message="升级成功")
-
-
-@router.post("/{user_id}/discount", summary="设置用户折扣")
-@require_roles()  # 只有 admin 能访问
-def set_user_discount(
-    request: Request,
-    user_id: int,
-    discount_request: DiscountSetRequest = Body(...),
-    db: Session = Depends(get_db)
-):
-    """设置用户折扣（仅管理员可访问）"""
-    result = user_service.set_user_discount(
-        db, user_id, discount_request.discount_rate, discount_request.expire_at
-    )
-    return format_response(data=result, message="设置成功")
 
 
 @router.post("/{user_id}/role", summary="修改用户角色")

@@ -1,5 +1,6 @@
 import request from './request'
 
+// 用户登录
 export function login(username, password) {
   const formData = new FormData()
   formData.append('username', username)
@@ -11,6 +12,16 @@ export function login(username, password) {
   })
 }
 
+// 用户注册
+export function register(data) {
+  return request({
+    url: '/users/register',
+    method: 'post',
+    data
+  })
+}
+
+// 获取当前用户信息
 export function getUserInfo() {
   return request({
     url: '/users/me',
@@ -18,13 +29,20 @@ export function getUserInfo() {
   })
 }
 
-export function updateUserInfo(username, password) {
-  const params = {}
-  if (username) params.username = username
-  if (password) params.password = password
+// 修改密码
+export function updatePassword(data) {
   return request({
     url: '/users/me',
     method: 'put',
-    params
+    data
+  })
+}
+
+// 更新个人信息
+export function updateProfile(data) {
+  return request({
+    url: '/users/me/profile',
+    method: 'put',
+    data
   })
 }

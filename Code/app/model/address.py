@@ -4,10 +4,10 @@
 """
 from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey
 from datetime import datetime
-from model import BaseModel
+from model import Base
 
 
-class UserAddress(BaseModel):
+class UserAddress(Base):
     __tablename__ = "user_addresses"
     
     id = Column(String(50), primary_key=True, index=True, comment="地址ID（UUID）")
@@ -19,5 +19,6 @@ class UserAddress(BaseModel):
     district = Column(String(50), comment="区县")
     detail_address = Column(String(255), nullable=False, comment="详细地址")
     is_default = Column(Boolean, default=False, comment="是否默认地址")
-    created_at = Column(DateTime, default=datetime.now, comment="创建时间")
-    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, comment="更新时间")
+    is_deleted = Column(Boolean, default=False, comment="逻辑删除")
+    created_time = Column(DateTime, default=datetime.now, comment="创建时间")
+    updated_time = Column(DateTime, default=datetime.now, onupdate=datetime.now, comment="更新时间")

@@ -14,8 +14,8 @@ class ShoppingCartItem(Base):
     spec_id = Column(String(50), nullable=True, comment="商品规格ID，无规格为null")
     buy_num = Column(Integer, nullable=False, default=1, comment="购买数量")
     is_checked = Column(Boolean, nullable=False, default=False, comment="是否选中 0-未选中 1-选中")
-    add_time = Column(DateTime, nullable=False, default=datetime.now, comment="加入时间")
-    update_time = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now, comment="更新时间")
-    is_delete = Column(Boolean, nullable=False, default=False, comment="逻辑删除 0-正常 1-删除")
+    is_deleted = Column(Boolean, nullable=False, default=False, comment="逻辑删除")
+    created_time = Column(DateTime, nullable=False, default=datetime.now, comment="创建时间")
+    updated_time = Column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now, comment="更新时间")
     
     cart = relationship("ShoppingCart", backref="items")
