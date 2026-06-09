@@ -22,9 +22,9 @@ def pay_update_func(orderdata, db):
     """更新支付记录"""
     data = orderdata.model_dump()
     return pay_dao.pay_update_dao(data, db)
-def pay_delete_func(pay_id, db):
+def pay_delete_func(order_id, db):
     """删除支付记录"""
-    return pay_dao.pay_delete_dao(pay_id, db)
+    return pay_dao.pay_delete_dao(order_id, db)
 
 
 def verify_pay_password(user_id: str, pay_password: str, db) -> dict:

@@ -15,6 +15,16 @@ def pay_query_dao(order_id, db: Session):
         return False
     return {k: v for k, v in data.__dict__.items() if not k.startswith('_')}
 
+# 查询数据（通过支付单ID）
+def pay_query_by_pay_id_dao(pay_id, db: Session):
+    data = db.query(Payments).filter(
+        Payments.pay_id == pay_id,
+        Payments.is_deleted == "0"
+    ).first()
+    if not data:
+        return False
+    return {k: v for k, v in data.__dict__.items() if not k.startswith('_')}
+
 # 新增数据
 def pay_insert_dao(orderdata: dict, db: Session):
     payment_data = {
