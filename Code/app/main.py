@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from fastapi import HTTPException
 from api import (user_api_router, role_api_router, address_api_router, log_api_router, ai_api_router, data_router, shopping_cart,goods_router,
-                 pay_api_router,logistics_api_router,refund_api_router,return_logistics_api_router,coupon_api_router,usercoupon_api_router,activity_api_router,activitygoods_api_router,activityorders_api_router)
+                 pay_api_router,logistics_api_router,refund_api_router,return_logistics_api_router,coupon_api_router,usercoupon_api_router,activity_api_router,activitygoods_api_router)
 from utils.jwt_utils import decode_access_token
 from utils.logger import get_logger
 
@@ -46,7 +46,10 @@ async def auth_middleware(request: Request, call_next):
     if any(request.url.path.startswith(path) for path in WHITELIST):
         response = await call_next(request)
         return response
-    
+
+    response = await call_next(request)
+    return response
+
     # 2. 获取 Token
     token = None
     if "Authorization" in request.headers:
@@ -115,7 +118,7 @@ app.include_router(coupon_api_router)
 app.include_router(usercoupon_api_router)
 app.include_router(activity_api_router)
 app.include_router(activitygoods_api_router)
-app.include_router(activityorders_api_router)
+# app.include_router(activityorders_api_router)
 
 # ===== 定时任务配置 =====
 from utils.scheduler_utils import init_scheduler
