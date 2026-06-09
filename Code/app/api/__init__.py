@@ -18,6 +18,8 @@ from .coupon_api import router2 as usercoupon_api_router
 from .coupon_api import router3 as activity_api_router
 from .coupon_api import router4 as activitygoods_api_router
 from .coupon_api import router5 as activityorders_api_router
+from .order_api import router as order_api_router
+
 
 
 # 统一导出所有路由
@@ -37,6 +39,7 @@ __all__ = [
     "usercoupon_api_router",
     "activity_api_router",
     "activitygoods_api_router",
-    "activityorders_api_router"
+    "activityorders_api_router",
+    "order_api_router"
 ]
 
