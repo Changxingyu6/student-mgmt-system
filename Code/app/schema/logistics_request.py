@@ -24,7 +24,7 @@ class IsNormal(str, Enum):
 class LogisticsRequest(BaseModel):
     """物流请求模型"""
     order_id: IDStr = Field(..., description="订单ID")
-    logistics_id: IDStr = Field(..., description="物流单ID")
+    logistics_id: Optional[IDStr] = Field(None, description="物流单ID（可选，不传则自动生成）")
     logistics_status: Logistics_Status = Field(..., description="物流状态")
     track_info: str = Field(..., description="物流轨迹信息")
     is_deleted: IsNormal = Field(IsNormal.isnormal, description="是否删除")

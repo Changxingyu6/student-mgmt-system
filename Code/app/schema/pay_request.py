@@ -49,5 +49,5 @@ class PaymentRequest(BaseModel):
     """支付请求模型"""
     pay_id: IDStr = Field(..., description="支付单ID")
     user_id: IDStr = Field(..., description="用户ID")
-    pay_amount: Decimal = Field(..., gt=0, description="支付金额必须大于0")
+    pay_amount: Optional[Decimal] = Field(None, description="支付金额（可选，不传则从支付记录获取）")
     pay_password: str = Field(..., min_length=1, description="支付密码")
