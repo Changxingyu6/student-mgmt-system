@@ -571,8 +571,8 @@ def check_balance_sufficient(db: Session, user_id: str, amount: float) -> bool:
         logger.warn(f"检查余额失败 - 余额不足 - 用户ID: {user_id}, 余额: {balance}, 需要: {amount}")
         return False
     
-    # 余额充足，直接扣减（使用 update_balance，传入负数实现扣减）
-    user_repo.update_balance(db, user_id, -float(amount_decimal))
+    # 余额充足，直接扣减
+    user_repo.deduct_balance(db, user_id, float(amount_decimal), "余额支付")
     
     logger.debug(f"余额扣减成功 - 用户ID: {user_id}, 扣减金额: {amount}, 剩余余额: {balance_decimal - amount_decimal}")
     return True

@@ -53,6 +53,9 @@ def logistics_update_dao(logisticsdata: dict, db: Session):
         if not logistics:
             return False
         for key, value in logisticsdata.items():
+            # 跳过 None 值，只更新传入的字段
+            if value is None:
+                continue
             if hasattr(logistics, key):
                 setattr(logistics, key, value)
         db.commit()

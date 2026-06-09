@@ -32,6 +32,6 @@ class LogisticsRequest(BaseModel):
 class LogisticsUpdate(BaseModel):
     """物流更新模型"""
     logistics_id: IDStr = Field(..., description="物流单ID")
-    logistics_status: Logistics_Status = Field(..., description="物流状态")
+    logistics_status: Optional[Logistics_Status] = Field(None, description="物流状态（可选，不传则不更新）")
     track_info: Optional[str] = Field(None, description="物流轨迹信息")
     is_deleted: IsNormal = Field(IsNormal.isnormal, description="是否删除")
