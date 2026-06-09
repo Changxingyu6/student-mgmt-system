@@ -62,7 +62,7 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore()
   const token = userStore.token
 
@@ -72,7 +72,18 @@ router.beforeEach((to, from, next) => {
     next('/')
   } else if (to.meta.requiresAdmin) {
     // 检查是否是管理员
-    const userInfo = userStore.userInfo
+    let userInfo = userStore.userInfo
+    // 如果用户信息为空，尝试获取
+    if (!userInfo && token) {
+      try {
+        await userStore.getUserInfo()
+        userInfo = userStore.userInfo
+      } catch (error) {
+        console.error('获取用户信息失败:', error)
+        next('/login')
+        return
+      }
+    }
     if (userInfo && userInfo.role === 'admin') {
       next()
     } else {

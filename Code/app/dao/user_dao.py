@@ -2,26 +2,27 @@
 用户认证数据访问层
 使用 SQLAlchemy ORM 进行用户相关数据库操作
 """
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timedelta
+from decimal import Decimal
 from model.user import User
 from utils.uuid_utils import generate_uuid
 
 
 def get_user_by_username(db: Session, username: str) -> Optional[User]:
-    """根据用户名获取用户"""
-    return db.query(User).filter(User.username == username, User.is_deleted == False).first()
+    """根据用户名获取用户（包含角色信息）"""
+    return db.query(User).options(joinedload(User.role)).filter(User.username == username, User.is_deleted == False).first()
 
 
 def get_user_by_id(db: Session, user_id: str) -> Optional[User]:
-    """根据ID获取用户"""
-    return db.query(User).filter(User.id == user_id, User.is_deleted == False).first()
+    """根据ID获取用户（包含角色信息）"""
+    return db.query(User).options(joinedload(User.role)).filter(User.id == user_id, User.is_deleted == False).first()
 
 
 def get_user_with_lock_status(db: Session, username: str) -> Optional[User]:
-    """获取用户（包含锁定状态）"""
-    return db.query(User).filter(User.username == username, User.is_deleted == False).first()
+    """获取用户（包含锁定状态和角色信息）"""
+    return db.query(User).options(joinedload(User.role)).filter(User.username == username, User.is_deleted == False).first()
 
 
 def create_user(db: Session, username: str, hashed_password: str, salt: str, 
@@ -107,7 +108,7 @@ def lock_user(db: Session, username: str, lock_minutes: int = 15) -> bool:
         return False
     
     db_user.lock_count = (db_user.lock_count or 0) + 1
-    db_user.lock_until = datetime.now() + datetime.timedelta(minutes=lock_minutes)
+    db_user.lock_until = datetime.now() + timedelta(minutes=lock_minutes)
     db.commit()
     db.refresh(db_user)
     return True
@@ -170,37 +171,13 @@ def delete_user(db: Session, user_id: str) -> bool:
     return True
 
 
-def freeze_user(db: Session, user_id: str) -> Optional[User]:
-    """冻结用户账户"""
-    db_user = get_user_by_id(db, user_id)
-    if not db_user:
-        return None
-    
-    db_user.status = "inactive"
-    db.commit()
-    db.refresh(db_user)
-    return db_user
-
-
-def unfreeze_user(db: Session, user_id: str) -> Optional[User]:
-    """解冻用户账户"""
-    db_user = get_user_by_id(db, user_id)
-    if not db_user:
-        return None
-    
-    db_user.status = "active"
-    db.commit()
-    db.refresh(db_user)
-    return db_user
-
-
 def update_balance(db: Session, user_id: str, amount: float) -> Optional[User]:
     """更新用户余额"""
     db_user = get_user_by_id(db, user_id)
     if not db_user:
         return None
     
-    db_user.balance = (db_user.balance or 0) + amount
+    db_user.balance = (db_user.balance or Decimal('0')) + Decimal(str(amount))
     db.commit()
     db.refresh(db_user)
     return db_user

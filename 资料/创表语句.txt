@@ -47,24 +47,6 @@ CREATE TABLE IF NOT EXISTS roles (
     INDEX idx_role_name (role_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
 
--- 3. 收货地址表
-CREATE TABLE IF NOT EXISTS user_addresses (
-    id VARCHAR(50) PRIMARY KEY COMMENT '地址ID',
-    user_id VARCHAR(50) NOT NULL COMMENT '用户ID',
-    receiver_name VARCHAR(50) NOT NULL COMMENT '收货人姓名',
-    receiver_phone VARCHAR(20) NOT NULL COMMENT '收货人电话',
-    province VARCHAR(50) COMMENT '省份',
-    city VARCHAR(50) COMMENT '城市',
-    district VARCHAR(50) COMMENT '区县',
-    detail_address VARCHAR(255) NOT NULL COMMENT '详细地址',
-    is_default TINYINT(1) DEFAULT 0 COMMENT '是否默认地址 0-否 1-是',
-    is_deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_user_id (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户收货地址表';
-
 -- 3. 订单主表
 DROP TABLE IF EXISTS orders;
 CREATE TABLE orders (
@@ -140,7 +122,6 @@ CREATE TABLE after_sales (
   PRIMARY KEY (id),
   KEY idx_order_id (order_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='售后订单表';
-
 -- 6. 支付记录表
 CREATE TABLE payments (
   pay_id VARCHAR(50) PRIMARY KEY COMMENT '支付单ID',
@@ -230,82 +211,73 @@ CREATE TABLE shopping_cart_item (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='购物车项表';
 
 -- 12. 商品分类表
-CREATE TABLE category (
-    id VARCHAR(50) NOT NULL COMMENT '分类ID',
-    name VARCHAR(50) NOT NULL COMMENT '分类名称',
-    parent_id VARCHAR(50) DEFAULT '0' COMMENT '父分类ID',
-    sort_order INT DEFAULT 0 COMMENT '排序值',
-    status TINYINT DEFAULT 1 COMMENT '0禁用 1启用',
-    is_deleted TINYINT DEFAULT 0 COMMENT '软删除',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (id),
-    INDEX idx_parent_id (parent_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品分类表';
+CREATE TABLE `goods_category` (
+    `id` VARCHAR(50) NOT NULL COMMENT '分类ID（UUID）',
+    `category_name` VARCHAR(50) NOT NULL COMMENT '分类名称',
+    `parent_id` VARCHAR(50) NOT NULL DEFAULT '0' COMMENT '父分类ID，0表示一级分类',
+    `sort_order` INT NOT NULL DEFAULT 0 COMMENT '排序值，越大越靠前',
+    `icon` VARCHAR(200) DEFAULT NULL COMMENT '分类图标URL',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态：1启用，0禁用',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`id`),
+    INDEX `idx_parent_id` (`parent_id`),
+    INDEX `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商品分类表';
 
--- 13. 品牌表
-CREATE TABLE brand (
-    id VARCHAR(50) NOT NULL COMMENT '品牌ID',
-    name VARCHAR(50) NOT NULL COMMENT '品牌名称',
-    origin VARCHAR(100) DEFAULT NULL COMMENT '品牌产地',
-    logo VARCHAR(255) DEFAULT NULL COMMENT '品牌Logo URL',
-    is_deleted TINYINT DEFAULT 0 COMMENT '软删除',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (id),
-    UNIQUE INDEX idx_name (name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='品牌表';
 
--- 14. 商品主表
-CREATE TABLE product (
-    id VARCHAR(50) NOT NULL COMMENT '商品ID',
-    name VARCHAR(100) NOT NULL COMMENT '商品名称',
-    category_id VARCHAR(50) NOT NULL COMMENT '分类ID',
-    brand_id VARCHAR(50) NOT NULL COMMENT '品牌ID',
-    brief VARCHAR(255) DEFAULT NULL COMMENT '商品简介',
-    main_image VARCHAR(255) DEFAULT NULL COMMENT '主图URL',
-    detail_images TEXT DEFAULT NULL COMMENT '详情图JSON',
-    status SMALLINT DEFAULT 1 COMMENT '0下架，1上架',
-    is_deleted SMALLINT DEFAULT 0 COMMENT '软删除',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (id),
-    INDEX idx_category_id (category_id),
-    INDEX idx_brand_id (brand_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品主表';
+-- 13. 商品表
+CREATE TABLE `goods` (
+    `id` VARCHAR(50) NOT NULL COMMENT '商品ID（UUID）',
+    `goods_no` VARCHAR(50) NOT NULL COMMENT '商品编号',
+    `goods_name` VARCHAR(200) NOT NULL COMMENT '商品名称',
+    `category_id` VARCHAR(50) NOT NULL COMMENT '分类ID',
+    `price` FLOAT NOT NULL DEFAULT 0 COMMENT '售价',
+    `original_price` FLOAT NOT NULL DEFAULT 0 COMMENT '原价',
+    `cost_price` FLOAT NOT NULL DEFAULT 0 COMMENT '成本价',
+    `intro` VARCHAR(500) DEFAULT NULL COMMENT '商品简介',
+    `detail_images` TEXT DEFAULT NULL COMMENT '详情图（JSON数组）',
+    `main_image` VARCHAR(200) DEFAULT NULL COMMENT '主图URL',
+    `brand` VARCHAR(50) DEFAULT NULL COMMENT '品牌',
+    `origin` VARCHAR(50) DEFAULT NULL COMMENT '产地',
+    `sale_status` INT NOT NULL DEFAULT 1 COMMENT '上架状态：1上架，0下架',
+    `stock_warning` INT NOT NULL DEFAULT 10 COMMENT '预警库存阈值',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE INDEX `uk_goods_no` (`goods_no`),
+    INDEX `idx_category_id` (`category_id`),
+    INDEX `idx_sale_status` (`sale_status`),
+    INDEX `idx_price` (`price`),
+    CONSTRAINT `fk_goods_category` FOREIGN KEY (`category_id`) REFERENCES `goods_category`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商品表';
 
--- 15. 规格表
-CREATE TABLE specification (
-    id VARCHAR(50) NOT NULL COMMENT '规格ID',
-    name VARCHAR(50) NOT NULL COMMENT '规格名称',
-    sort_order INT DEFAULT 0 COMMENT '排序值',
-    is_deleted TINYINT DEFAULT 0 COMMENT '软删除',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (id),
-    UNIQUE INDEX idx_name (name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='规格表';
 
--- 16. 商品SKU表
-CREATE TABLE product_sku (
-    id VARCHAR(50) NOT NULL COMMENT 'SKU ID',
-    product_id VARCHAR(50) NOT NULL COMMENT '商品ID',
-    spec_values JSON NOT NULL COMMENT '规格值组合',
-    price DECIMAL(10,2) NOT NULL COMMENT '售价',
-    stock INT DEFAULT 0 COMMENT '库存数量',
-    warn_stock INT DEFAULT 10 COMMENT '库存预警',
-    purchase_price DECIMAL(10,2) DEFAULT NULL COMMENT '进货价',
-    purchase_time DATE DEFAULT NULL COMMENT '最近进货时间',
-    sku_code VARCHAR(100) DEFAULT NULL COMMENT 'SKU编码',
-    is_deleted TINYINT DEFAULT 0 COMMENT '软删除',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (id),
-    INDEX idx_product_id (product_id),
-    FOREIGN KEY (product_id) REFERENCES product(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品SKU表';
+-- 14. 商品规格表
+CREATE TABLE `goods_spec` (
+    `id` VARCHAR(50) NOT NULL COMMENT '规格ID（UUID）',
+    `goods_id` VARCHAR(50) NOT NULL COMMENT '商品ID',
+    `spec_name` VARCHAR(50) NOT NULL COMMENT '规格名称，如颜色、尺寸',
+    `spec_value` VARCHAR(100) NOT NULL COMMENT '规格值，如红色、XL',
+    `sort_order` INT NOT NULL DEFAULT 0 COMMENT '排序值',
+    PRIMARY KEY (`id`),
+    INDEX `idx_goods_id` (`goods_id`),
+    CONSTRAINT `fk_spec_goods` FOREIGN KEY (`goods_id`) REFERENCES `goods`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商品规格表';
 
--- 17. 优惠券表
+-- 15.商品库存表
+CREATE TABLE `goods_stock` (
+    `id` VARCHAR(50) NOT NULL COMMENT '库存ID（UUID）',
+    `goods_id` VARCHAR(50) NOT NULL COMMENT '商品ID',
+    `stock_num` INT NOT NULL DEFAULT 0 COMMENT '库存数量',
+`warning_stock` INT NOT NULL DEFAUT 10 COMMENT'预警库存',
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE INDEX `uk_goods_id` (`goods_id`),
+    CONSTRAINT `fk_stock_goods` FOREIGN KEY (`goods_id`) REFERENCES `goods`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商品库存表';
+
+
+-- 16. 优惠券表
 CREATE TABLE coupons (
     id VARCHAR(50) NOT NULL COMMENT '主键ID',
     coupons_no VARCHAR(255) NOT NULL COMMENT '券编号',
@@ -326,7 +298,7 @@ CREATE TABLE coupons (
     UNIQUE KEY uk_coupons_no (coupons_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='优惠券表';
 
--- 18. 用户优惠券表
+-- 17. 用户优惠券表
 CREATE TABLE user_coupons (
   id VARCHAR(50) NOT NULL COMMENT '主键ID',
   coupon_id VARCHAR(50) NOT NULL COMMENT '关联券模板ID',
@@ -360,3 +332,21 @@ CREATE TABLE coupon_use_log (
   KEY idx_user_id (user_id),
   KEY idx_order_id (order_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='优惠券使用日志';
+
+-- 登录日志表
+CREATE TABLE IF NOT EXISTS `login_logs` (
+    `id` VARCHAR(50) NOT NULL COMMENT '日志ID（UUID）',
+    `user_id` VARCHAR(50) COMMENT '用户ID（登录成功时记录）',
+    `username` VARCHAR(50) COMMENT '登录用户名',
+    `ip_address` VARCHAR(50) COMMENT '登录IP',
+    `user_agent` VARCHAR(255) COMMENT '浏览器信息',
+    `login_type` ENUM('password', 'sms', 'wechat', 'alipay') DEFAULT 'password' COMMENT '登录方式',
+    `status` ENUM('success', 'failed') COMMENT '登录状态',
+    `error_message` VARCHAR(255) COMMENT '错误信息',
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    INDEX `idx_id` (`id`),
+    INDEX `idx_user_id` (`user_id`),
+    INDEX `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='登录日志表';

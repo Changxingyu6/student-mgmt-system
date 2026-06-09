@@ -12,6 +12,7 @@ export const useUserStore = defineStore('user', {
       try {
         const res = await loginApi(username, password)
         this.token = res.data.access_token
+        this.userInfo = res.data.user  // 登录成功后直接保存用户信息
         localStorage.setItem('token', this.token)
         return res
       } catch (error) {

@@ -103,8 +103,8 @@ def get_users_by_role(db: Session, role_id: int) -> List[User]:
 
 def update_user_role(db: Session, user_id: int, role_id: int) -> bool:
     """更新用户角色"""
-    from dao import user as user_repo
-    
+    from dao import user_dao as user_repo
+
     # 检查用户是否存在
     user = user_repo.get_user_by_id(db, user_id)
     if not user:

@@ -1,6 +1,6 @@
 """
 角色管理 API
-提供角色的增删改查接口
+提供角色的查询接口（角色固定写死，不可增删改）
 """
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
@@ -30,40 +30,3 @@ def get_role_detail(role_id: str, request: Request, db: Session = Depends(get_db
     if not result:
         raise HTTPException(status_code=404, detail="角色不存在")
     return format_response(data=result, message="获取成功")
-
-
-@router.post("", response_model=ApiResponse[RoleResponse], summary="创建角色")
-@require_roles()  # 只有 admin 能访问
-def create_role(request: Request, role_request: RoleCreateRequest, db: Session = Depends(get_db)):
-    """创建新角色"""
-    try:
-        result = role_service.create_role(db, role_request)
-        return format_response(data=result, message="创建成功")
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.put("/{role_id}", response_model=ApiResponse[RoleResponse], summary="更新角色")
-@require_roles()  # 只有 admin 能访问
-def update_role(role_id: str, request: Request, role_request: RoleUpdateRequest, db: Session = Depends(get_db)):
-    """更新角色信息"""
-    try:
-        result = role_service.update_role(db, role_id, role_request)
-        if not result:
-            raise HTTPException(status_code=404, detail="角色不存在")
-        return format_response(data=result, message="更新成功")
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.delete("/{role_id}", response_model=ApiResponse[dict], summary="删除角色")
-@require_roles()  # 只有 admin 能访问
-def delete_role(role_id: str, request: Request, db: Session = Depends(get_db)):
-    """删除角色（逻辑删除）"""
-    try:
-        success = role_service.delete_role(db, role_id)
-        if not success:
-            raise HTTPException(status_code=404, detail="角色不存在")
-        return format_response(message="删除成功")
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))

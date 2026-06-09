@@ -4,133 +4,48 @@
       <template #header>
         <div class="card-header">
           <span>角色管理</span>
-          <el-button type="primary" @click="showCreateDialog">
-            <el-icon><Plus /></el-icon>
-            新增角色
-          </el-button>
+          <span class="header-tip">角色为系统预设，不可增删改</span>
         </div>
       </template>
 
       <!-- 角色列表表格 -->
       <el-table :data="tableData" border style="width: 100%">
-        <el-table-column prop="id" label="ID" width="280" />
-        <el-table-column prop="name" label="角色名称" width="200" />
-        <el-table-column prop="description" label="描述" />
-        <el-table-column prop="created_at" label="创建时间" width="180">
+        <el-table-column prop="role_name" label="角色标识" width="200" />
+        <el-table-column prop="description" label="角色描述" />
+        <el-table-column prop="create_time" label="创建时间" width="180">
           <template #default="{ row }">
-            {{ formatDate(row.created_at) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button type="primary" size="small" @click="showEditDialog(row)">
-              编辑
-            </el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">
-              删除
-            </el-button>
+            {{ formatDate(row.create_time) }}
           </template>
         </el-table-column>
       </el-table>
     </el-card>
-
-    <!-- 创建/编辑角色弹窗 -->
-    <el-dialog v-model="showRoleDialog" :title="isEdit ? '编辑角色' : '新增角色'" width="500px">
-      <el-form :model="roleForm" label-width="100px">
-        <el-form-item label="角色名称">
-          <el-input v-model="roleForm.name" />
-        </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="roleForm.description" type="textarea" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showRoleDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleSaveRole">保存</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
-import { getRoles, createRole, updateRole, deleteRole } from '@/api/role'
+import { ref, onMounted } from 'vue'
+import { getRoles } from '@/api/role'
 
 const tableData = ref([])
-const showRoleDialog = ref(false)
-const isEdit = ref(false)
-const currentRoleId = ref('')
-
-const roleForm = reactive({
-  name: '',
-  description: ''
-})
 
 const formatDate = (date) => {
   if (!date) return ''
-  return new Date(date).toLocaleString('zh-CN')
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  const seconds = String(d.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
 const loadRoles = async () => {
   try {
     const res = await getRoles()
-    tableData.value = res.data || []
+    tableData.value = res.data?.data?.items || res.data?.items || []
   } catch (error) {
     console.error(error)
-  }
-}
-
-const showCreateDialog = () => {
-  isEdit.value = false
-  Object.assign(roleForm, {
-    name: '',
-    description: ''
-  })
-  showRoleDialog.value = true
-}
-
-const showEditDialog = (row) => {
-  isEdit.value = true
-  currentRoleId.value = row.id
-  Object.assign(roleForm, {
-    name: row.name,
-    description: row.description
-  })
-  showRoleDialog.value = true
-}
-
-const handleSaveRole = async () => {
-  try {
-    if (isEdit.value) {
-      await updateRole(currentRoleId.value, roleForm)
-      ElMessage.success('更新成功')
-    } else {
-      await createRole(roleForm)
-      ElMessage.success('创建成功')
-    }
-    showRoleDialog.value = false
-    loadRoles()
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-const handleDelete = async (row) => {
-  try {
-    await ElMessageBox.confirm('确定要删除该角色吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    await deleteRole(row.id)
-    ElMessage.success('删除成功')
-    loadRoles()
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error(error)
-    }
   }
 }
 
@@ -148,5 +63,10 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-tip {
+  font-size: 12px;
+  color: #909399;
 }
 </style>

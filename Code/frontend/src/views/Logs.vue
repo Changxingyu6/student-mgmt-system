@@ -7,45 +7,24 @@
         </div>
       </template>
 
-      <!-- 日志类型切换 -->
-      <el-tabs v-model="activeTab" @tab-change="loadLogs">
-        <el-tab-pane label="登录日志" name="login">
-          <el-table :data="tableData" border style="width: 100%">
-            <el-table-column prop="id" label="ID" width="280" />
-            <el-table-column prop="username" label="用户名" width="150" />
-            <el-table-column prop="ip_address" label="IP地址" width="150" />
-            <el-table-column prop="login_type" label="登录方式" width="120" />
-            <el-table-column prop="status" label="状态" width="100">
-              <template #default="{ row }">
-                <el-tag :type="row.status === 'success' ? 'success' : 'danger'">
-                  {{ row.status === 'success' ? '成功' : '失败' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="error_message" label="错误信息" />
-            <el-table-column prop="login_time" label="登录时间" width="180">
-              <template #default="{ row }">
-                {{ formatDate(row.login_time) }}
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-tab-pane>
-        <el-tab-pane label="操作日志" name="operation">
-          <el-table :data="tableData" border style="width: 100%">
-            <el-table-column prop="id" label="ID" width="280" />
-            <el-table-column prop="username" label="用户名" width="150" />
-            <el-table-column prop="module" label="模块" width="120" />
-            <el-table-column prop="action" label="操作" width="120" />
-            <el-table-column prop="description" label="描述" />
-            <el-table-column prop="ip_address" label="IP地址" width="150" />
-            <el-table-column prop="operation_time" label="操作时间" width="180">
-              <template #default="{ row }">
-                {{ formatDate(row.operation_time) }}
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-tab-pane>
-      </el-tabs>
+      <!-- 登录日志 -->
+      <el-table :data="tableData" border style="width: 100%">
+        <el-table-column prop="username" label="用户名" width="150" />
+        <el-table-column prop="login_type" label="登录方式" width="120" />
+        <el-table-column prop="status" label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 'success' ? 'success' : 'danger'">
+              {{ row.status === 'success' ? '成功' : '失败' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="error_message" label="错误信息" />
+        <el-table-column prop="create_time" label="登录时间" width="180">
+          <template #default="{ row }">
+            {{ formatDate(row.create_time) }}
+          </template>
+        </el-table-column>
+      </el-table>
 
       <!-- 分页 -->
       <el-pagination
@@ -64,9 +43,8 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { getLoginLogs, getOperationLogs } from '@/api/log'
+import { getLoginLogs } from '@/api/log'
 
-const activeTab = ref('login')
 const tableData = ref([])
 
 const pagination = reactive({
@@ -77,7 +55,14 @@ const pagination = reactive({
 
 const formatDate = (date) => {
   if (!date) return ''
-  return new Date(date).toLocaleString('zh-CN')
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  const seconds = String(d.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
 const loadLogs = async () => {
@@ -86,15 +71,9 @@ const loadLogs = async () => {
       page: pagination.page,
       limit: pagination.limit
     }
-    if (activeTab.value === 'login') {
-      const res = await getLoginLogs(params)
-      tableData.value = res.data?.data || []
-      pagination.total = res.data?.total || 0
-    } else {
-      const res = await getOperationLogs(params)
-      tableData.value = res.data?.data || []
-      pagination.total = res.data?.total || 0
-    }
+    const res = await getLoginLogs(params)
+    tableData.value = res.data?.data || []
+    pagination.total = res.data?.total || 0
   } catch (error) {
     console.error(error)
   }

@@ -15,29 +15,3 @@ export function getRoleDetail(roleId) {
     method: 'get'
   })
 }
-
-// 创建角色（管理员）
-export function createRole(data) {
-  return request({
-    url: '/roles',
-    method: 'post',
-    data
-  })
-}
-
-// 更新角色（管理员）
-export function updateRole(roleId, data) {
-  return request({
-    url: `/roles/${roleId}`,
-    method: 'put',
-    data
-  })
-}
-
-// 删除角色（管理员）
-export function deleteRole(roleId) {
-  return request({
-    url: `/roles/${roleId}`,
-    method: 'delete'
-  })
-}
