@@ -7,7 +7,10 @@ from utils.logger import logger
 
 # 查询数据
 def refund_query_dao(refund_id, db: Session):
-    data = db.query(Refund).filter(Refund.refund_id == refund_id).first()
+    data = db.query(Refund).filter(
+        Refund.refund_id == refund_id,
+        Refund.is_deleted == "0"
+    ).first()
     if not data:
         return False
     return {k: v for k, v in data.__dict__.items() if not k.startswith('_')}
@@ -37,7 +40,10 @@ def refund_insert_dao(refunddata: dict, db: Session):
 # 更新数据
 def refund_update_dao(refunddata: dict, db: Session):
     try:
-        refund = db.query(Refund).filter(Refund.refund_id == refunddata.get("refund_id")).first()
+        refund = db.query(Refund).filter(
+            Refund.refund_id == refunddata.get("refund_id"),
+            Refund.is_deleted == "0"
+        ).first()
         if not refund:
             return False
         for key, value in refunddata.items():
@@ -52,7 +58,10 @@ def refund_update_dao(refunddata: dict, db: Session):
 
 # 删除数据
 def refund_delete_dao(refund_id, db: Session):
-    data = db.query(Refund).filter(Refund.refund_id == refund_id).first()
+    data = db.query(Refund).filter(
+        Refund.refund_id == refund_id,
+        Refund.is_deleted == "0"
+    ).first()
     if data:
         data.is_deleted = "1"
         db.commit()

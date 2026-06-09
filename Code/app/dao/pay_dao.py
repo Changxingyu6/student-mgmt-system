@@ -1,3 +1,4 @@
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from model.payments_logistics import Payments
 from utils import generate_uuid
@@ -6,7 +7,10 @@ import uuid
 from utils import logger
 # 查询数据
 def pay_query_dao(order_id, db: Session):
-    data = db.query(Payments).filter(Payments.order_id == order_id).first()
+    data = db.query(Payments).filter(
+        Payments.order_id == order_id,
+        Payments.is_deleted == "0"
+    ).first()
     if not data:
         return False
     return {k: v for k, v in data.__dict__.items() if not k.startswith('_')}
@@ -37,7 +41,10 @@ def pay_insert_dao(orderdata: dict, db: Session):
 # 更新数据
 def pay_update_dao(orderdata: dict, db: Session):
     try:
-        order = db.query(Payments).filter(Payments.pay_id == orderdata.get("pay_id")).first()
+        order = db.query(Payments).filter(
+            Payments.pay_id == orderdata.get("pay_id"),
+            Payments.is_deleted == "0"
+        ).first()
         if not order:
             return False
         for key, value in orderdata.items():
@@ -52,7 +59,10 @@ def pay_update_dao(orderdata: dict, db: Session):
 
 # 删除数据
 def pay_delete_dao(order_id, db: Session):
-    data = db.query(Payments).filter(Payments.order_id == order_id).first()
+    data = db.query(Payments).filter(
+        Payments.order_id == order_id,
+        Payments.is_deleted == "0"
+    ).first()
     if data:
         data.is_deleted = "1"
         db.commit()
