@@ -47,23 +47,22 @@ def get_all_roles(db: Session) -> RoleListResponse:
 
 def create_role(db: Session, request: RoleCreateRequest) -> RoleResponse:
     """创建角色"""
-    # 检查角色名称是否已存在
     existing_role = role_repo.get_role_by_name(db, request.role_name)
     if existing_role:
         raise ValueError(f"角色名称 '{request.role_name}' 已存在")
     
     role = role_repo.create_role(db, request.role_name, request.description)
+    db.commit()
+    db.refresh(role)
     return _convert_role_to_response(role)
 
 
 def update_role(db: Session, role_id: int, request: RoleUpdateRequest) -> Optional[RoleResponse]:
     """更新角色信息"""
-    # 检查角色是否存在
     role = role_repo.get_role_by_id(db, role_id)
     if not role:
         raise ValueError("角色不存在")
     
-    # 如果修改角色名称，检查是否已存在
     if request.role_name and request.role_name != role.role_name:
         existing_role = role_repo.get_role_by_name(db, request.role_name)
         if existing_role:
@@ -77,23 +76,26 @@ def update_role(db: Session, role_id: int, request: RoleUpdateRequest) -> Option
     )
     
     if updated_role:
+        db.commit()
+        db.refresh(updated_role)
         return _convert_role_to_response(updated_role)
     return None
 
 
 def delete_role(db: Session, role_id: int) -> bool:
     """删除角色"""
-    # 检查角色是否存在
     role = role_repo.get_role_by_id(db, role_id)
     if not role:
         raise ValueError("角色不存在")
     
-    # 检查是否有用户使用该角色
     user_count = role_repo.count_users_by_role(db, role_id)
     if user_count > 0:
         raise ValueError(f"该角色下有 {user_count} 个用户，无法删除")
     
-    return role_repo.delete_role(db, role_id)
+    success = role_repo.delete_role(db, role_id)
+    if success:
+        db.commit()
+    return success
 
 
 def get_users_by_role(db: Session, role_id: int) -> List[User]:
@@ -105,12 +107,10 @@ def update_user_role(db: Session, user_id: int, role_id: int) -> bool:
     """更新用户角色"""
     from dao import user_dao as user_repo
 
-    # 检查用户是否存在
     user = user_repo.get_user_by_id(db, user_id)
     if not user:
         raise ValueError("用户不存在")
     
-    # 检查角色是否存在
     role = role_repo.get_role_by_id(db, role_id)
     if not role:
         raise ValueError("角色不存在")

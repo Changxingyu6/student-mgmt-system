@@ -583,11 +583,11 @@ const handleConfirmAddToCart = async () => {
   const userId = userStore.userInfo?.id
   try {
     const res = await addToCart(userId, cartForm.goods_id, cartForm.spec_id, cartForm.quantity)
-    if (res.status === 'success') {
+    if (res.code === 200) {
       ElMessage.success('已加入购物车')
       cartDialogVisible.value = false
     } else {
-      ElMessage.error(res.cart_status || '加入购物车失败')
+      ElMessage.error(res.message || '加入购物车失败')
     }
   } catch (e) {
     ElMessage.error(e.response?.data?.detail || '加入购物车失败')

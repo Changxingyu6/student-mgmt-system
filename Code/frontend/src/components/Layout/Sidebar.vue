@@ -86,5 +86,9 @@ const route = useRoute()
 const userStore = useUserStore()
 
 const activeMenu = computed(() => route.path)
-const isAdmin = computed(() => userStore.userInfo?.role === 'admin')
+const isAdmin = computed(() => {
+  // 安全检查：确保 userInfo 不为 null
+  if (!userStore.userInfo) return false
+  return userStore.userInfo.role === 'admin'
+})
 </script>

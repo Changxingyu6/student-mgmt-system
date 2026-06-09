@@ -50,8 +50,6 @@ def create_address(db: Session, user_id: str, receiver_name: str, receiver_phone
         is_default=is_default
     )
     db.add(db_address)
-    db.commit()
-    db.refresh(db_address)
     return db_address
 
 
@@ -72,8 +70,6 @@ def update_address(db: Session, address_id: str, **kwargs) -> Optional[UserAddre
         if value is not None:
             setattr(db_address, key, value)
     
-    db.commit()
-    db.refresh(db_address)
     return db_address
 
 
@@ -84,7 +80,6 @@ def delete_address(db: Session, address_id: str) -> bool:
         return False
     
     db.delete(db_address)
-    db.commit()
     return True
 
 
@@ -100,6 +95,4 @@ def set_default_address(db: Session, address_id: str) -> Optional[UserAddress]:
     ).update({"is_default": False})
     
     db_address.is_default = True
-    db.commit()
-    db.refresh(db_address)
     return db_address

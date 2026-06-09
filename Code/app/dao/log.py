@@ -14,8 +14,6 @@ def create_login_log(db: Session, **kwargs) -> LoginLog:
     kwargs['id'] = generate_uuid()
     log = LoginLog(**kwargs)
     db.add(log)
-    db.commit()
-    db.refresh(log)
     return log
 
 
@@ -59,5 +57,4 @@ def delete_old_login_logs(db: Session, days: int = 90) -> int:
     """删除指定天数之前的登录日志"""
     cutoff_time = datetime.now() - timedelta(days=days)
     deleted_count = db.query(LoginLog).filter(LoginLog.create_time < cutoff_time).delete()
-    db.commit()
     return deleted_count

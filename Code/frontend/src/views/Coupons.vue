@@ -295,7 +295,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   listCoupons, createCoupon, updateCoupon, deleteCoupon,
-  listUserCoupons, createUserCoupon, deleteUserCoupon,
+  listUserCoupons, createUserCoupon, deleteUserCoupon, receiveCoupon,
   listActivities, createActivity, updateActivity, deleteActivity,
   listUseLogs, deleteUseLog
 } from '@/api/coupon'
@@ -395,21 +395,21 @@ const handleDeleteCoupon = async (row) => {
 // 领取优惠券
 const handleClaimCoupon = async (row) => {
   const userId = userStore.userInfo?.id
-  if (!userId) { ElMessage.warning('请先登录'); return }
+  if (!userId) { 
+    ElMessage.warning('请先登录')
+    return 
+  }
+  
   try {
-    const res = await createUserCoupon({
-      coupon_no: row.coupons_no,
-      user_id: userId,
-      coupon_id: row.id,
-      status: 1
-    })
-    if (res.status === 'success' || res.code === 200) {
+    const res = await receiveCoupon(row.id, userId)
+    if (res.code === 200) {
       ElMessage.success('领取成功')
+      loadCoupons() // 刷新列表更新库存
     } else {
-      ElMessage.error(res.user_coupons_status || '领取失败')
+      ElMessage.error(res.message || '领取失败')
     }
   } catch (e) {
-    ElMessage.error(e.response?.data?.msg || e.response?.data?.detail || '领取失败')
+    ElMessage.error(e.response?.data?.message || e.response?.data?.detail || '领取失败')
   }
 }
 

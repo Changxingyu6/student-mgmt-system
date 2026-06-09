@@ -9,7 +9,6 @@ from utils.uuid_utils import generate_uuid
 from model.shopping_cart_item import ShoppingCartItem
 
 
-
 def _item_to_dict(item: ShoppingCartItem) -> Dict:
     """将购物车项对象转换为字典"""
     return {
@@ -38,8 +37,6 @@ def add_cart_item(db: Session, cart_id: str, goods_id: str, spec_id: str = None,
     if existing_item:
         existing_item.buy_num += buy_num
         existing_item.update_time = datetime.now()
-        db.commit()
-        db.refresh(existing_item)
         return _item_to_dict(existing_item)
     else:
         new_item = ShoppingCartItem(
@@ -52,8 +49,6 @@ def add_cart_item(db: Session, cart_id: str, goods_id: str, spec_id: str = None,
             is_deleted=False
         )
         db.add(new_item)
-        db.commit()
-        db.refresh(new_item)
         return _item_to_dict(new_item)
 
 
@@ -83,8 +78,6 @@ def update_cart_item(db: Session, item_id: str, cart_id: str, buy_num: int = Non
         item.is_checked = is_checked
     item.update_time = datetime.now()
     
-    db.commit()
-    db.refresh(item)
     return _item_to_dict(item)
 
 
@@ -101,7 +94,6 @@ def delete_cart_item(db: Session, item_id: str, cart_id: str) -> bool:
     
     item.is_deleted = True
     item.update_time = datetime.now()
-    db.commit()
     return True
 
 
@@ -114,7 +106,6 @@ def clear_cart_items(db: Session, cart_id: str) -> bool:
         ShoppingCartItem.is_deleted: True,
         ShoppingCartItem.update_time: datetime.now()
     })
-    db.commit()
     return True
 
 

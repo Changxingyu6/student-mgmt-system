@@ -11,7 +11,13 @@
       </template>
 
       <!-- 购物车列表 -->
-      <el-table :data="cartItems" border style="width: 100%" @selection-change="handleSelectionChange">
+      <el-table 
+        :data="cartItems" 
+        border 
+        style="width: 100%" 
+        @selection-change="handleSelectionChange"
+        ref="tableRef"
+      >
         <el-table-column type="selection" width="55" />
         <el-table-column prop="goods_name" label="商品名称" width="200" />
         <el-table-column prop="spec_name" label="规格" width="150" />
@@ -30,9 +36,9 @@
             ¥{{ (row.price * row.buy_num).toFixed(2) }}
           </template>
         </el-table-column>
-        <el-table-column prop="is_checked" label="选中" width="80">
+        <el-table-column label="选中" width="80">
           <template #default="{ row }">
-            <el-switch v-model="row.is_checked" @change="handleUpdateChecked(row)" />
+            <el-switch v-model="row.is_checked" @change="handleSwitchChange(row)" />
           </template>
         </el-table-column>
         <el-table-column label="操作" width="100" fixed="right">
@@ -59,14 +65,18 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getCart, updateCartItem, deleteCartItem, getCartTotal } from '@/api/cart'
+import { getCart, updateCartItem, deleteCartItem } from '@/api/cart'
+import { createOrderFromCart } from '@/api/order'
 import { useUserStore } from '@/stores/user'
 
+const router = useRouter()
 const userStore = useUserStore()
 const cartItems = ref([])
 const selectedItems = ref([])
+const tableRef = ref(null)
 
 const selectedCount = computed(() => selectedItems.value.length)
 const totalPrice = computed(() => {
@@ -79,8 +89,18 @@ const loadCart = async () => {
     if (!userId) return
     const res = await getCart(userId)
     cartItems.value = res.data?.items || []
+    
+    // 等待DOM更新后，初始化多选框状态
+    await nextTick()
+    if (tableRef.value) {
+      cartItems.value.forEach(item => {
+        if (item.is_checked) {
+          tableRef.value.toggleRowSelection(item, true)
+        }
+      })
+    }
   } catch (error) {
-    console.error(error)
+    console.error('加载购物车失败:', error)
   }
 }
 
@@ -91,19 +111,28 @@ const handleSelectionChange = (selection) => {
 const handleUpdateNum = async (row) => {
   try {
     const userId = userStore.userInfo?.id
-    await updateCartItem(row.id, userId, row.buy_num, null)
+    await updateCartItem(row.item_id, userId, row.buy_num, null)
     ElMessage.success('更新成功')
   } catch (error) {
     console.error(error)
+    loadCart()
   }
 }
 
-const handleUpdateChecked = async (row) => {
+const handleSwitchChange = async (row) => {
   try {
     const userId = userStore.userInfo?.id
-    await updateCartItem(row.id, userId, null, row.is_checked)
+    await updateCartItem(row.item_id, userId, null, row.is_checked)
+    
+    // 同步多选框状态
+    await nextTick()
+    if (tableRef.value) {
+      tableRef.value.toggleRowSelection(row, row.is_checked)
+    }
   } catch (error) {
     console.error(error)
+    // 失败时恢复原状态
+    row.is_checked = !row.is_checked
   }
 }
 
@@ -115,7 +144,7 @@ const handleDelete = async (row) => {
       type: 'warning'
     })
     const userId = userStore.userInfo?.id
-    await deleteCartItem(row.id, userId)
+    await deleteCartItem(row.item_id, userId)
     ElMessage.success('删除成功')
     loadCart()
   } catch (error) {
@@ -138,7 +167,7 @@ const handleClearSelected = async () => {
     })
     const userId = userStore.userInfo?.id
     for (const item of selectedItems.value) {
-      await deleteCartItem(item.id, userId)
+      await deleteCartItem(item.item_id, userId)
     }
     ElMessage.success('删除成功')
     loadCart()
@@ -149,12 +178,21 @@ const handleClearSelected = async () => {
   }
 }
 
-const handleCheckout = () => {
+const handleCheckout = async () => {
   if (selectedItems.value.length === 0) {
     ElMessage.warning('请先选择商品')
     return
   }
-  ElMessage.info('结算功能待开发')
+  try {
+    const userId = userStore.userInfo?.id
+    const res = await createOrderFromCart(userId)
+    
+    ElMessage.success('订单创建成功')
+    loadCart()  // 刷新购物车
+  } catch (error) {
+    console.error('创建订单失败:', error)
+    ElMessage.error(error.response?.data?.message || '创建订单失败')
+  }
 }
 
 onMounted(() => {

@@ -57,6 +57,8 @@ def create_user_address(db: Session, user_id: int, receiver_name: str,
         db, user_id, receiver_name, receiver_phone, detail_address,
         province, city, district, is_default
     )
+    db.commit()
+    db.refresh(address)
     return _convert_address_to_response(address)
 
 
@@ -72,6 +74,8 @@ def update_user_address(db: Session, user_id: int, address_id: int, **kwargs) ->
         raise HTTPException(status_code=403, detail="无权限操作此地址")
     
     result = address_repo.update_address(db, address_id, **kwargs)
+    db.commit()
+    db.refresh(result)
     return _convert_address_to_response(result)
 
 
@@ -87,6 +91,7 @@ def delete_user_address(db: Session, user_id: int, address_id: int) -> dict:
         raise HTTPException(status_code=403, detail="无权限操作此地址")
     
     address_repo.delete_address(db, address_id)
+    db.commit()
     return {"message": "删除成功"}
 
 
@@ -102,4 +107,6 @@ def set_user_default_address(db: Session, user_id: int, address_id: int) -> dict
         raise HTTPException(status_code=403, detail="无权限操作此地址")
     
     result = address_repo.set_default_address(db, address_id)
+    db.commit()
+    db.refresh(result)
     return _convert_address_to_response(result)

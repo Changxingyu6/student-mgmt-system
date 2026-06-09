@@ -35,6 +35,7 @@ class LoginLogService:
                 status=status,
                 error_message=error_message
             )
+            db.commit()
             logger.info(f"登录日志记录成功 - 用户: {username} - 状态: {status}")
         except Exception as e:
             logger.error(f"记录登录日志失败: {str(e)}")
@@ -73,6 +74,7 @@ class LoginLogService:
         """清理过期日志"""
         try:
             login_deleted = delete_old_login_logs(db, login_days)
+            db.commit()
             logger.info(f"清理过期登录日志 - 删除: {login_deleted} 条")
             return {"login_deleted": login_deleted}
         except Exception as e:

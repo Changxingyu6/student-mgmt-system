@@ -25,23 +25,31 @@ export function deleteCoupon(id) {
 // ============ 用户优惠券 ============
 // 创建用户优惠券
 export function createUserCoupon(data) {
-  return request({ url: '/coupons/user-coupons', method: 'post', data })
+  return request({ url: '/usercoupons/user-coupons', method: 'post', data })
+}
+// 用户领取优惠券（每个用户每种优惠券只能领取一张）
+export function receiveCoupon(couponId, userId) {
+  return request({ 
+    url: '/usercoupons/receive', 
+    method: 'post', 
+    data: { coupon_id: couponId, user_id: userId }
+  })
 }
 // 获取用户优惠券列表
 export function listUserCoupons(params) {
-  return request({ url: '/coupons/user-coupons', method: 'get', params })
+  return request({ url: '/usercoupons/user-coupons', method: 'get', params })
 }
 // 获取用户优惠券详情
 export function getUserCoupon(id) {
-  return request({ url: `/coupons/user-coupons/${id}`, method: 'get' })
+  return request({ url: `/usercoupons/user-coupons/${id}`, method: 'get' })
 }
 // 更新用户优惠券
 export function updateUserCoupon(id, data) {
-  return request({ url: `/coupons/user-coupons/${id}`, method: 'put', data })
+  return request({ url: `/usercoupons/user-coupons/${id}`, method: 'put', data })
 }
 // 删除用户优惠券
 export function deleteUserCoupon(id) {
-  return request({ url: `/coupons/user-coupons/${id}`, method: 'delete' })
+  return request({ url: `/usercoupons/user-coupons/${id}`, method: 'delete' })
 }
 
 // ============ 优惠券使用日志 ============

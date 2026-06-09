@@ -24,6 +24,7 @@ class CouponCreate(CouponBase):
 
 
 class CouponUpdate(BaseModel):
+    coupons_no: Optional[str] = None
     coupons_name: Optional[str] = None
     type: Optional[int] = Field(None, ge=1, le=3)
     face_value: Optional[Decimal] = Field(None, max_digits=10, decimal_places=2)

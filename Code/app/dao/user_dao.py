@@ -43,8 +43,6 @@ def create_user(db: Session, username: str, hashed_password: str, salt: str,
         status=status
     )
     db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
     return db_user
 
 
@@ -58,8 +56,6 @@ def update_user(db: Session, user_id: str, **kwargs) -> Optional[User]:
         if hasattr(db_user, key) and value is not None:
             setattr(db_user, key, value)
     
-    db.commit()
-    db.refresh(db_user)
     return db_user
 
 
@@ -71,8 +67,6 @@ def update_user_password(db: Session, user_id: str, hashed_password: str, salt: 
     
     db_user.password = hashed_password
     db_user.salt = salt
-    db.commit()
-    db.refresh(db_user)
     return db_user
 
 
@@ -83,8 +77,6 @@ def increment_failed_attempts(db: Session, username: str) -> bool:
         return False
     
     db_user.failed_attempts = (db_user.failed_attempts or 0) + 1
-    db.commit()
-    db.refresh(db_user)
     return True
 
 
@@ -96,8 +88,6 @@ def reset_failed_attempts(db: Session, username: str) -> bool:
     
     db_user.failed_attempts = 0
     db_user.lock_until = None
-    db.commit()
-    db.refresh(db_user)
     return True
 
 
@@ -109,8 +99,6 @@ def lock_user(db: Session, username: str, lock_minutes: int = 15) -> bool:
     
     db_user.lock_count = (db_user.lock_count or 0) + 1
     db_user.lock_until = datetime.now() + timedelta(minutes=lock_minutes)
-    db.commit()
-    db.refresh(db_user)
     return True
 
 
@@ -122,8 +110,6 @@ def unlock_user(db: Session, user_id: str) -> Optional[User]:
     
     db_user.failed_attempts = 0
     db_user.lock_until = None
-    db.commit()
-    db.refresh(db_user)
     return db_user
 
 
@@ -134,8 +120,6 @@ def reset_lock_count(db: Session, username: str) -> bool:
         return False
     
     db_user.lock_count = 0
-    db.commit()
-    db.refresh(db_user)
     return True
 
 
@@ -167,7 +151,6 @@ def delete_user(db: Session, user_id: str) -> bool:
         return False
     
     db_user.is_deleted = True
-    db.commit()
     return True
 
 
@@ -178,8 +161,6 @@ def update_balance(db: Session, user_id: str, amount: float) -> Optional[User]:
         return None
     
     db_user.balance = (db_user.balance or Decimal('0')) + Decimal(str(amount))
-    db.commit()
-    db.refresh(db_user)
     return db_user
 
 
@@ -190,8 +171,6 @@ def update_user_level(db: Session, user_id: str, level: str) -> Optional[User]:
         return None
     
     db_user.user_level = level
-    db.commit()
-    db.refresh(db_user)
     return db_user
 
 
@@ -202,8 +181,6 @@ def update_user_discount(db: Session, user_id: str, discount_rate: float) -> Opt
         return None
     
     db_user.discount_rate = discount_rate
-    db.commit()
-    db.refresh(db_user)
     return db_user
 
 
@@ -238,6 +215,4 @@ def update_pay_password(db: Session, user_id: str, hashed_password: str) -> Opti
         return None
     
     db_user.pay_password = hashed_password
-    db.commit()
-    db.refresh(db_user)
     return db_user

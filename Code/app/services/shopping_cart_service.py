@@ -7,10 +7,33 @@ from typing import Dict
 from fastapi import HTTPException
 from dao import shopping_cart_dao as cart_dao
 from dao import shopping_cart_item_dao as item_dao
+from model.goods_model import Goods, GoodsSpec
 from utils.logger import get_logger
 
 
 logger = get_logger("shopping_cart")
+
+
+def _get_item_details(db: Session, item: Dict) -> Dict:
+    """获取购物车项的完整信息（包含商品名称、规格名称、价格）"""
+    goods = db.query(Goods).filter(Goods.id == item["goods_id"]).first()
+    
+    spec_name = "默认规格"
+    if item.get("spec_id"):
+        spec = db.query(GoodsSpec).filter(GoodsSpec.id == item["spec_id"]).first()
+        if spec:
+            spec_name = f"{spec.spec_name}: {spec.spec_value}"
+    
+    price = 0.0
+    if goods and goods.price:
+        price = float(goods.price)
+    
+    return {
+        **item,
+        "goods_name": goods.goods_name if goods else "未知商品",
+        "spec_name": spec_name,
+        "price": price
+    }
 
 
 def get_cart_by_user(db: Session, user_id: str) -> Dict:
@@ -20,15 +43,18 @@ def get_cart_by_user(db: Session, user_id: str) -> Dict:
     cart = cart_dao.get_cart_by_user_id(db, user_id)
     if not cart:
         cart = cart_dao.create_cart(db, user_id)
+        db.commit()
+        db.refresh(cart)
 
     items = item_dao.get_cart_items_by_cart_id(db, cart.cart_id)
+    items_with_details = [_get_item_details(db, item) for item in items]
 
     return {
         "cart_id": cart.cart_id,
         "user_id": cart.user_id,
         "is_active": cart.is_active,
-        "item_count": len(items),
-        "items": items,
+        "item_count": len(items_with_details),
+        "items": items_with_details,
         "create_time": cart.create_time.strftime("%Y-%m-%d %H:%M:%S") if cart.create_time else None,
         "update_time": cart.update_time.strftime("%Y-%m-%d %H:%M:%S") if cart.update_time else None
     }
@@ -46,6 +72,7 @@ def add_to_cart(db: Session, user_id: str, goods_id: str, spec_id: str = None, b
         cart = cart_dao.create_cart(db, user_id)
 
     item = item_dao.add_cart_item(db, cart.cart_id, goods_id, spec_id, buy_num)
+    db.commit()
 
     return {
         "item_id": item["item_id"],
@@ -55,7 +82,7 @@ def add_to_cart(db: Session, user_id: str, goods_id: str, spec_id: str = None, b
         "spec_id": item["spec_id"],
         "buy_num": item["buy_num"],
         "is_checked": item["is_checked"],
-        "add_time": item["add_time"]
+        "create_time": item["create_time"]
     }
 
 
@@ -74,6 +101,8 @@ def update_cart_item(db: Session, user_id: str, item_id: str, buy_num: int = Non
 
     if not item:
         raise HTTPException(status_code=404, detail="购物车商品不存在")
+
+    db.commit()
 
     return {
         "item_id": item["item_id"],
@@ -98,6 +127,7 @@ def delete_cart_item(db: Session, user_id: str, item_id: str) -> Dict:
     if not success:
         raise HTTPException(status_code=404, detail="购物车商品不存在")
 
+    db.commit()
     return {"message": "删除成功"}
 
 

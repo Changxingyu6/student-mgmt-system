@@ -13,23 +13,18 @@ from utils.logger import get_logger
 from services.log_service import LoginLogService
 from schema.user import UserResponse
 
-# 获取日志记录器
 logger = get_logger("user")
 
-# 登录失败限制配置（从环境变量读取）
 MAX_FAILED_ATTEMPTS = int(os.getenv("MAX_FAILED_ATTEMPTS", "5"))
-# 阶梯式锁定时间配置（分钟），逗号分隔：第1次锁定时长,第2次锁定时长,...
 LOCK_DURATIONS = [int(x) for x in os.getenv("LOCK_DURATIONS", "5,15,30,60,120").split(",")]
 
 
 def get_lock_duration_by_count(lock_count: int) -> int:
-    """根据锁定次数获取对应的锁定时长（分钟）"""
     index = min(lock_count - 1, len(LOCK_DURATIONS) - 1)
     return LOCK_DURATIONS[index]
 
 
 def check_user_locked(db: Session, username: str) -> bool:
-    """检查用户是否被锁定"""
     user = user_repo.get_user_with_lock_status(db, username)
     if not user:
         return False
@@ -40,11 +35,11 @@ def check_user_locked(db: Session, username: str) -> bool:
             return True
         else:
             user_repo.reset_failed_attempts(db, username)
+            db.commit()
     return False
 
 
 def get_lock_remaining_time(db: Session, username: str) -> int:
-    """获取剩余锁定时间（秒）"""
     user = user_repo.get_user_with_lock_status(db, username)
     if not user or not user.lock_until:
         return 0
@@ -55,7 +50,6 @@ def get_lock_remaining_time(db: Session, username: str) -> int:
 
 
 def _convert_user_to_response(user) -> dict:
-    """将用户对象转换为响应格式"""
     now = datetime.now()
     is_locked = False
     if user.lock_until and user.lock_until > now:
@@ -83,12 +77,7 @@ def _convert_user_to_response(user) -> dict:
     }
 
 
-def authenticate_user(
-    username: str, 
-    password: str, 
-    db: Session
-) -> Optional[dict]:
-    """验证用户身份"""
+def authenticate_user(username: str, password: str, db: Session) -> Optional[dict]:
     logger.debug(f"验证用户身份 - 用户名: {username}")
     user = user_repo.get_user_by_username(db, username)
     if not user:
@@ -109,7 +98,6 @@ def login_for_access_token(
     ip_address: str = "",
     user_agent: str = ""
 ) -> dict:
-    """用户登录获取token"""
     logger.info(f"用户登录尝试 - 用户名: {username}")
     
     if check_user_locked(db, username):
@@ -126,6 +114,7 @@ def login_for_access_token(
             status="failed",
             error_message=f"账户已被锁定，请{remaining_minutes}分钟后再试"
         )
+        db.commit()
         
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -137,6 +126,7 @@ def login_for_access_token(
     
     if not user:
         user_repo.increment_failed_attempts(db, username)
+        db.commit()
         
         db_user = user_repo.get_user_with_lock_status(db, username)
         failed_count = db_user.failed_attempts if db_user else 0
@@ -157,6 +147,7 @@ def login_for_access_token(
                 status="failed",
                 error_message=f"登录失败{MAX_FAILED_ATTEMPTS}次，账户已被锁定{lock_duration}分钟（第{current_lock_count}次锁定）"
             )
+            db.commit()
             
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -176,6 +167,7 @@ def login_for_access_token(
             status="failed",
             error_message=f"用户名或密码错误，还剩{remaining_attempts}次尝试机会"
         )
+        db.commit()
         
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -185,8 +177,8 @@ def login_for_access_token(
     
     user_repo.reset_failed_attempts(db, username)
     user_repo.reset_lock_count(db, username)
+    db.commit()
     
-    # 获取用户角色
     from services import role_service
     user_role = role_service.get_user_role(db, user["id"]) or "user"
     
@@ -210,6 +202,7 @@ def login_for_access_token(
         login_type="password",
         status="success"
     )
+    db.commit()
     
     return {
         "access_token": access_token,
@@ -218,17 +211,10 @@ def login_for_access_token(
     }
 
 
-def update_user_password(
-    db: Session,
-    user_id: str,
-    old_password: str,
-    new_password: str
-) -> dict:
-    """修改用户密码（需要验证旧密码）"""
+def update_user_password(db: Session, user_id: str, old_password: str, new_password: str) -> dict:
     logger.info(f"修改密码尝试 - 用户ID: {user_id}")
     
     user = user_repo.get_user_by_id(db, user_id)
-    
     if not user:
         logger.error(f"修改密码失败 - 用户不存在 - 用户ID: {user_id}")
         raise HTTPException(status_code=404, detail="用户不存在")
@@ -241,21 +227,16 @@ def update_user_password(
     hashed_new_password = md5_hash(new_salt, new_password)
     
     updated_user = user_repo.update_user_password(db, user_id, hashed_new_password, new_salt)
+    db.commit()
+    db.refresh(updated_user)
     
     logger.info(f"密码修改成功 - 用户ID: {user_id} - 用户名: {updated_user.username}")
     
     return _convert_user_to_response(updated_user)
 
 
-def register_user(
-    db: Session,
-    username: str, 
-    password: str, 
-    nickname: str = None,
-    phone: str = None,
-    email: str = None
-) -> dict:
-    """注册新用户"""
+def register_user(db: Session, username: str, password: str, nickname: str = None,
+                 phone: str = None, email: str = None) -> dict:
     logger.info(f"用户注册尝试 - 用户名: {username}")
     
     if user_repo.check_username_exists(db, username):
@@ -266,6 +247,8 @@ def register_user(
     hashed_password = md5_hash(salt, password)
     
     new_user = user_repo.create_user(db, username, hashed_password, salt, nickname, phone, email)
+    db.commit()
+    db.refresh(new_user)
     
     logger.info(f"注册成功 - 用户名: {username} - 用户ID: {new_user.id}")
     
@@ -273,7 +256,6 @@ def register_user(
 
 
 def get_user_by_id(db: Session, user_id: str) -> dict:
-    """获取用户详情"""
     logger.info(f"获取用户详情 - 用户ID: {user_id}")
     
     user = user_repo.get_user_by_id(db, user_id)
@@ -285,7 +267,6 @@ def get_user_by_id(db: Session, user_id: str) -> dict:
 
 
 def get_all_users(db: Session, page: int = 1, limit: int = 10) -> dict:
-    """获取所有用户列表（管理员用）"""
     logger.info(f"获取用户列表 - 页码: {page}, 每页数量: {limit}")
     users = user_repo.get_all_users(db, page, limit)
     total = user_repo.count_users(db)
@@ -294,16 +275,10 @@ def get_all_users(db: Session, page: int = 1, limit: int = 10) -> dict:
     for user in users:
         result.append(_convert_user_to_response(user))
     
-    return {
-        "data": result,
-        "total": total,
-        "page": page,
-        "limit": limit
-    }
+    return {"data": result, "total": total, "page": page, "limit": limit}
 
 
 def get_locked_users(db: Session) -> List[dict]:
-    """获取所有被锁定的用户"""
     logger.info("获取被锁定用户列表")
     users = user_repo.get_locked_users(db)
     
@@ -315,7 +290,6 @@ def get_locked_users(db: Session) -> List[dict]:
 
 
 def unlock_user_account(db: Session, user_id: str) -> dict:
-    """解锁用户账户（管理员用）"""
     logger.info(f"解锁用户账户 - 用户ID: {user_id}")
     
     user = user_repo.unlock_user(db, user_id)
@@ -323,23 +297,16 @@ def unlock_user_account(db: Session, user_id: str) -> dict:
         logger.error(f"解锁失败 - 用户不存在 - 用户ID: {user_id}")
         raise HTTPException(status_code=404, detail="用户不存在")
     
+    db.commit()
+    db.refresh(user)
     logger.info(f"解锁成功 - 用户ID: {user_id} - 用户名: {user.username}")
     
     return _convert_user_to_response(user)
 
 
-def create_user(
-    db: Session,
-    username: str,
-    password: str,
-    nickname: str = None,
-    phone: str = None,
-    email: str = None,
-    user_level: str = "青铜会员",
-    balance: float = 0.00,
-    status: str = "active"
-) -> dict:
-    """管理员创建用户"""
+def create_user(db: Session, username: str, password: str, nickname: str = None,
+               phone: str = None, email: str = None, user_level: str = "青铜会员",
+               balance: float = 0.00, status: str = "active") -> dict:
     logger.info(f"管理员创建用户 - 用户名: {username}")
     
     if user_repo.check_username_exists(db, username):
@@ -352,22 +319,16 @@ def create_user(
         db, username, hashed_password, salt, 
         nickname, phone, email, user_level, balance, status
     )
+    db.commit()
+    db.refresh(new_user)
     
     logger.info(f"创建用户成功 - 用户ID: {new_user.id}")
     
     return _convert_user_to_response(new_user)
 
 
-def update_user(
-    db: Session,
-    user_id: str,
-    nickname: str = None,
-    phone: str = None,
-    email: str = None,
-    user_level: str = None,
-    status: str = None
-) -> dict:
-    """管理员更新用户信息"""
+def update_user(db: Session, user_id: str, nickname: str = None, phone: str = None,
+               email: str = None, user_level: str = None, status: str = None) -> dict:
     logger.info(f"管理员更新用户信息 - 用户ID: {user_id}")
     
     user = user_repo.get_user_by_id(db, user_id)
@@ -387,6 +348,8 @@ def update_user(
         update_data['status'] = status
     
     updated_user = user_repo.update_user(db, user_id, **update_data)
+    db.commit()
+    db.refresh(updated_user)
     
     logger.info(f"更新用户信息成功 - 用户ID: {user_id}")
     
@@ -394,19 +357,18 @@ def update_user(
 
 
 def delete_user(db: Session, user_id: str) -> dict:
-    """管理员删除用户（逻辑删除）"""
     logger.info(f"管理员删除用户 - 用户ID: {user_id}")
     
     if not user_repo.delete_user(db, user_id):
         raise HTTPException(status_code=404, detail="用户不存在")
     
+    db.commit()
     logger.info(f"删除用户成功 - 用户ID: {user_id}")
     
     return {"id": user_id, "message": "删除成功"}
 
 
 def recharge_balance(db: Session, user_id: str, amount: float, reason: str = None) -> dict:
-    """管理员为用户充值余额"""
     logger.info(f"管理员充值余额 - 用户ID: {user_id}, 金额: {amount}")
     
     if amount <= 0:
@@ -416,13 +378,14 @@ def recharge_balance(db: Session, user_id: str, amount: float, reason: str = Non
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     
+    db.commit()
+    db.refresh(user)
     logger.info(f"充值成功 - 用户ID: {user_id}, 余额: {user.balance}")
     
     return _convert_user_to_response(user)
 
 
 def deduct_balance(db: Session, user_id: str, amount: float, reason: str = None) -> dict:
-    """管理员扣除用户余额"""
     from decimal import Decimal
     logger.info(f"管理员扣除余额 - 用户ID: {user_id}, 金额: {amount}")
     
@@ -438,6 +401,8 @@ def deduct_balance(db: Session, user_id: str, amount: float, reason: str = None)
         raise HTTPException(status_code=400, detail="余额不足")
     
     user = user_repo.update_balance(db, user_id, -float(amount_decimal))
+    db.commit()
+    db.refresh(user)
     
     logger.info(f"扣除成功 - 用户ID: {user_id}, 余额: {user.balance}")
     
@@ -445,7 +410,6 @@ def deduct_balance(db: Session, user_id: str, amount: float, reason: str = None)
 
 
 def upgrade_user_level(db: Session, user_id: str, level: str) -> dict:
-    """管理员升级用户等级"""
     logger.info(f"管理员升级用户等级 - 用户ID: {user_id}, 等级: {level}")
     
     valid_levels = ["青铜会员", "白银会员", "黄金会员"]
@@ -456,13 +420,14 @@ def upgrade_user_level(db: Session, user_id: str, level: str) -> dict:
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     
+    db.commit()
+    db.refresh(user)
     logger.info(f"升级成功 - 用户ID: {user_id}, 等级: {user.user_level}")
     
     return _convert_user_to_response(user)
 
 
 def set_user_discount(db: Session, user_id: str, discount_rate: float) -> dict:
-    """管理员设置用户折扣"""
     logger.info(f"管理员设置用户折扣 - 用户ID: {user_id}, 折扣率: {discount_rate}")
     
     if discount_rate <= 0 or discount_rate > 1:
@@ -472,21 +437,15 @@ def set_user_discount(db: Session, user_id: str, discount_rate: float) -> dict:
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     
+    db.commit()
+    db.refresh(user)
     logger.info(f"设置折扣成功 - 用户ID: {user_id}, 折扣率: {user.discount_rate}")
     
     return _convert_user_to_response(user)
 
 
-def update_user_profile(
-    db: Session,
-    user_id: str,
-    nickname: str = None,
-    phone: str = None,
-    email: str = None,
-    gender: str = None,
-    avatar: str = None
-) -> dict:
-    """用户更新个人信息"""
+def update_user_profile(db: Session, user_id: str, nickname: str = None, phone: str = None,
+                      email: str = None, gender: str = None, avatar: str = None) -> dict:
     logger.info(f"用户更新个人信息 - 用户ID: {user_id}")
     
     update_data = {}
@@ -505,23 +464,14 @@ def update_user_profile(
     if not updated_user:
         raise HTTPException(status_code=404, detail="用户不存在")
     
+    db.commit()
+    db.refresh(updated_user)
     logger.info(f"更新个人信息成功 - 用户ID: {user_id}")
     
     return _convert_user_to_response(updated_user)
 
 
 def verify_pay_password(db: Session, user_id: str, password: str) -> bool:
-    """
-    验证用户支付密码是否正确
-    
-    Args:
-        db: 数据库会话
-        user_id: 用户ID（UUID格式）
-        password: 用户输入的支付密码（明文）
-    
-    Returns:
-        bool: 密码正确返回True，否则返回False
-    """
     logger.debug(f"验证支付密码 - 用户ID: {user_id}")
     
     result = user_repo.get_user_pay_password(db, user_id)
@@ -542,17 +492,6 @@ def verify_pay_password(db: Session, user_id: str, password: str) -> bool:
 
 
 def check_balance_sufficient(db: Session, user_id: str, amount: float) -> bool:
-    """
-    判断用户余额是否足够支付指定金额，充足则直接扣减余额
-    
-    Args:
-        db: 数据库会话
-        user_id: 用户ID（UUID格式）
-        amount: 待支付金额（正数）
-    
-    Returns:
-        bool: 余额充足并扣减成功返回True，不足返回False
-    """
     from decimal import Decimal
     logger.debug(f"检查余额 - 用户ID: {user_id}, 金额: {amount}")
     
@@ -571,8 +510,8 @@ def check_balance_sufficient(db: Session, user_id: str, amount: float) -> bool:
         logger.warn(f"检查余额失败 - 余额不足 - 用户ID: {user_id}, 余额: {balance}, 需要: {amount}")
         return False
     
-    # 余额充足，直接扣减（使用 update_balance，传入负数实现扣减）
     user_repo.update_balance(db, user_id, -float(amount_decimal))
+    db.commit()
     
-    logger.debug(f"余额扣减成功 - 用户ID: {user_id}, 扣减金额: {amount}, 剩余余额: {balance_decimal - amount_decimal}")
+    logger.debug(f"余额扣减成功 - 用户ID: {user_id}, 扣减金额: {amount}")
     return True

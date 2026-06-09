@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from database import get_db
@@ -23,7 +23,7 @@ router4 = APIRouter(prefix="/activitiesgoods",tags=['营销商品管理'])
 
 @router1.post("")
 @require_roles(["admin"])
-def create_coupon(coupon: CouponCreate, db: Session = Depends(get_db)):
+def create_coupon(request: Request, coupon: CouponCreate, db: Session = Depends(get_db)):
     data = coupon_service.create_coupon(db, coupon)
     return format_response(data=data, message="优惠券创建成功")
 
@@ -53,7 +53,7 @@ def get_coupon(coupon_id: str, db: Session = Depends(get_db)):
 
 @router1.put("/{coupon_id}")
 @require_roles(["admin"])
-def update_coupon(coupon_id: str, coupon_update: CouponUpdate, db: Session = Depends(get_db)):
+def update_coupon(request: Request, coupon_id: str, coupon_update: CouponUpdate, db: Session = Depends(get_db)):
     data = coupon_service.update_coupon(db, coupon_id, coupon_update)
     if not data:
         return format_response(code=404, message="优惠券不存在")
@@ -62,7 +62,7 @@ def update_coupon(coupon_id: str, coupon_update: CouponUpdate, db: Session = Dep
 
 @router1.delete("/{coupon_id}")
 @require_roles(["admin"])
-def delete_coupon(coupon_id: str, db: Session = Depends(get_db)):
+def delete_coupon(request: Request, coupon_id: str, db: Session = Depends(get_db)):
     success = coupon_service.delete_coupon(db, coupon_id)
     if not success:
         return format_response(code=404, message="优惠券不存在")
@@ -70,6 +70,31 @@ def delete_coupon(coupon_id: str, db: Session = Depends(get_db)):
 
 
 # ==================== 用户优惠券 UserCoupon API ====================
+
+@router2.post("/receive", summary="用户领取优惠券")
+def receive_coupon(
+    request: Request,
+    data: dict,
+    db: Session = Depends(get_db)
+):
+    """
+    用户自主领取优惠券（每个用户每种优惠券只能领取一张）
+    
+    请求体参数：
+    - coupon_id: 优惠券模板ID
+    - user_id: 用户ID
+    """
+    coupon_id = data.get('coupon_id')
+    user_id = data.get('user_id')
+    
+    if not coupon_id or not user_id:
+        return format_response(code=400, message="缺少必要参数")
+    
+    result, error = coupon_service.receive_coupon(db, coupon_id, user_id)
+    if error:
+        return format_response(code=400, message=error)
+    return format_response(data=result, message="领取成功")
+
 
 @router2.post("/user-coupons")
 def create_user_coupon(uc: UserCouponCreate, db: Session = Depends(get_db)):
@@ -165,7 +190,7 @@ def delete_user_coupon(uc_id: str, db: Session = Depends(get_db)):
 
 @router3.post("/activities")
 @require_roles(["admin"])
-def create_activity(activity: ActivitiesCreate, db: Session = Depends(get_db)):
+def create_activity(request: Request, activity: ActivitiesCreate, db: Session = Depends(get_db)):
     data = coupon_service.create_activity(db, activity)
     return format_response(data=data, message="营销活动创建成功")
 
@@ -194,7 +219,7 @@ def get_activity(activity_id: str, db: Session = Depends(get_db)):
 
 @router3.put("/activities/{activity_id}")
 @require_roles(["admin"])
-def update_activity(activity_id: str, activity_update: ActivitiesUpdate, db: Session = Depends(get_db)):
+def update_activity(request: Request, activity_id: str, activity_update: ActivitiesUpdate, db: Session = Depends(get_db)):
     data = coupon_service.update_activity(db, activity_id, activity_update)
     if not data:
         return format_response(code=404, message="营销活动不存在")
@@ -203,7 +228,7 @@ def update_activity(activity_id: str, activity_update: ActivitiesUpdate, db: Ses
 
 @router3.delete("/activities/{activity_id}")
 @require_roles(["admin"])
-def delete_activity(activity_id: str, db: Session = Depends(get_db)):
+def delete_activity(request: Request, activity_id: str, db: Session = Depends(get_db)):
     success = coupon_service.delete_activity(db, activity_id)
     if not success:
         return format_response(code=404, message="营销活动不存在")
@@ -214,7 +239,7 @@ def delete_activity(activity_id: str, db: Session = Depends(get_db)):
 
 @router4.post("/activities/{activities_id}/goods")
 @require_roles(["admin"])
-def add_activity_goods(activities_id: str, goods_id: str, db: Session = Depends(get_db)):
+def add_activity_goods(request: Request, activities_id: str, goods_id: str, db: Session = Depends(get_db)):
     coupon_service.create_activity_goods(db, activities_id, goods_id)
     return format_response(message="活动商品关联成功")
 
@@ -235,6 +260,7 @@ def get_activity_goods(
 @router4.delete("/activities/{activities_id}/goods")
 @require_roles(["admin"])
 def remove_activity_goods(
+    request: Request,
     activities_id: str,
     goods_id: Optional[str] = Query(None),
     db: Session = Depends(get_db)

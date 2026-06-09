@@ -28,8 +28,6 @@ def create_role(db: Session, role_name: str, description: str = None) -> Role:
     """创建角色"""
     role = Role(id=generate_uuid(), role_name=role_name, description=description)
     db.add(role)
-    db.commit()
-    db.refresh(role)
     return role
 
 
@@ -43,8 +41,6 @@ def update_role(db: Session, role_id: str, role_name: str = None, description: s
             role.description = description
         if status:
             role.status = status
-        db.commit()
-        db.refresh(role)
     return role
 
 
@@ -53,7 +49,6 @@ def delete_role(db: Session, role_id: str) -> bool:
     role = db.query(Role).filter(Role.id == role_id).first()
     if role:
         role.status = 'inactive'
-        db.commit()
         return True
     return False
 
