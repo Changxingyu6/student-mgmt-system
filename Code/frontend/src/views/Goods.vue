@@ -78,7 +78,7 @@
           <template #default="{ row }">¥{{ row.original_price || '-' }}</template>
         </el-table-column>
         <el-table-column label="库存" width="80">
-          <template #default="{ row }">{{ row.stock?.stock_num ?? 0 }}</template>
+          <template #default="{ row }">{{ row.stock_num ?? 0 }}</template>
         </el-table-column>
         <el-table-column label="状态" width="80">
           <template #default="{ row }">
@@ -272,6 +272,16 @@
         <el-form-item label="商品">
           <span>{{ stockForm.goods_name }}</span>
         </el-form-item>
+        <el-form-item label="规格">
+          <el-select v-model="stockForm.spec_id" style="width: 100%" @change="onSpecChange">
+            <el-option
+              v-for="spec in stockForm.specs"
+              :key="spec.id"
+              :label="`${spec.spec_name}: ${spec.spec_value}`"
+              :value="spec.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="当前库存">
           <span>{{ stockForm.current_stock }}</span>
         </el-form-item>
@@ -283,6 +293,35 @@
       <template #footer>
         <el-button @click="stockDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSaveStock">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 加入购物车弹窗 -->
+    <el-dialog v-model="cartDialogVisible" title="加入购物车" width="400px">
+      <el-form :model="cartForm" label-width="100px">
+        <el-form-item label="商品">
+          <span>{{ cartForm.goods_name }}</span>
+        </el-form-item>
+        <el-form-item label="规格" prop="spec_id">
+          <el-select v-model="cartForm.spec_id" style="width: 100%" placeholder="请选择规格" @change="onCartSpecChange">
+            <el-option
+              v-for="spec in cartForm.specs"
+              :key="spec.id"
+              :label="`${spec.spec_name}: ${spec.spec_value}`"
+              :value="spec.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="数量" prop="quantity">
+          <el-input-number v-model="cartForm.quantity" :step="1" :min="1" :max="cartForm.current_stock" />
+        </el-form-item>
+        <el-form-item label="库存">
+          <span>剩余 {{ cartForm.current_stock }} 件</span>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="cartDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleConfirmAddToCart">确认加入</el-button>
       </template>
     </el-dialog>
   </div>
@@ -472,14 +511,84 @@ const handleDeleteGoods = async (row) => {
   }
 }
 
-// 加入购物车
+// ============ 加入购物车 ============
+const cartDialogVisible = ref(false)
+const cartForm = reactive({
+  spec_id: '',
+  goods_id: '',
+  goods_name: '',
+  quantity: 1,
+  current_stock: 0,
+  specs: []
+})
+
 const handleAddToCart = async (row) => {
   const userId = userStore.userInfo?.id
-  if (!userId) { ElMessage.warning('请先登录'); return }
+  if (!userId) { 
+    ElMessage.warning('请先登录')
+    return 
+  }
+  
   try {
-    const res = await addToCart(userId, row.id, null, 1)
+    // 获取商品详情（包含规格信息）
+    const res = await getGoodsDetail(row.id)
+    const data = res.data || res
+    
+    // 获取规格列表
+    const specs = data.specs || []
+    
+    if (specs.length === 0) {
+      ElMessage.warning('该商品暂无规格信息')
+      return
+    }
+    
+    // 默认选择第一个规格
+    const firstSpec = specs[0]
+    
+    Object.assign(cartForm, {
+      spec_id: firstSpec.id,
+      goods_id: row.id,
+      goods_name: row.goods_name,
+      quantity: 1,
+      current_stock: firstSpec.stock?.stock_num ?? 0,
+      specs: specs
+    })
+    cartDialogVisible.value = true
+  } catch (e) {
+    console.error('获取商品规格失败:', e)
+    ElMessage.error('获取商品规格失败')
+  }
+}
+
+const onCartSpecChange = (specId) => {
+  // 切换规格时更新当前库存
+  const spec = cartForm.specs.find(s => s.id === specId)
+  if (spec) {
+    cartForm.current_stock = spec.stock?.stock_num ?? 0
+    // 如果当前数量超过新规格的库存，重置为1
+    if (cartForm.quantity > cartForm.current_stock) {
+      cartForm.quantity = 1
+    }
+  }
+}
+
+const handleConfirmAddToCart = async () => {
+  if (!cartForm.spec_id) {
+    ElMessage.warning('请选择规格')
+    return
+  }
+  
+  if (cartForm.quantity <= 0) {
+    ElMessage.warning('请输入有效的数量')
+    return
+  }
+  
+  const userId = userStore.userInfo?.id
+  try {
+    const res = await addToCart(userId, cartForm.goods_id, cartForm.spec_id, cartForm.quantity)
     if (res.status === 'success') {
       ElMessage.success('已加入购物车')
+      cartDialogVisible.value = false
     } else {
       ElMessage.error(res.cart_status || '加入购物车失败')
     }
@@ -491,25 +600,57 @@ const handleAddToCart = async (row) => {
 // ============ 库存调整 ============
 const stockDialogVisible = ref(false)
 const stockForm = reactive({
-  goods_id: '',
+  spec_id: '',
   goods_name: '',
+  goods_id: '',
   current_stock: 0,
-  delta: 0
+  delta: 0,
+  specs: []  // 存储商品的规格列表
 })
 
-const handleAdjustStock = (row) => {
-  Object.assign(stockForm, {
-    goods_id: row.id,
-    goods_name: row.goods_name,
-    current_stock: row.stock?.stock_num ?? 0,
-    delta: 0
-  })
-  stockDialogVisible.value = true
+const handleAdjustStock = async (row) => {
+  try {
+    // 获取商品详情（包含规格信息）
+    const res = await getGoodsDetail(row.id)
+    const data = res.data || res
+    
+    // 获取规格列表
+    const specs = data.specs || []
+    
+    if (specs.length === 0) {
+      ElMessage.warning('该商品暂无规格信息')
+      return
+    }
+    
+    // 默认选择第一个规格
+    const firstSpec = specs[0]
+    
+    Object.assign(stockForm, {
+      spec_id: firstSpec.id,
+      goods_name: row.goods_name,
+      goods_id: row.id,
+      current_stock: firstSpec.stock?.stock_num ?? 0,
+      delta: 0,
+      specs: specs
+    })
+    stockDialogVisible.value = true
+  } catch (e) {
+    console.error('获取商品规格失败:', e)
+    ElMessage.error('获取商品规格失败')
+  }
+}
+
+const onSpecChange = (specId) => {
+  // 切换规格时更新当前库存
+  const spec = stockForm.specs.find(s => s.id === specId)
+  if (spec) {
+    stockForm.current_stock = spec.stock?.stock_num ?? 0
+  }
 }
 
 const handleSaveStock = async () => {
   try {
-    await adjustStock(stockForm.goods_id, stockForm.delta)
+    await adjustStock(stockForm.spec_id, stockForm.delta)
     ElMessage.success('库存调整成功')
     stockDialogVisible.value = false
     loadGoodsList()
@@ -521,7 +662,7 @@ const handleSaveStock = async () => {
 
 const handleQuickReplenish = (row) => {
   Object.assign(stockForm, {
-    goods_id: row.goods_id,
+    spec_id: row.spec_id,
     goods_name: row.goods_name,
     current_stock: row.stock_num,
     delta: row.warning_threshold * 5

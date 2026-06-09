@@ -97,12 +97,71 @@ def delete_goods(db: Session, goods_id: str):
 
 
 def get_goods_detail(db: Session, goods_id: str):
-    return dao.get_goods_by_id(db, goods_id)
+    goods = dao.get_goods_by_id(db, goods_id)
+    if not goods:
+        return None
+    
+    # 获取商品的规格列表
+    specs = dao.get_specs_by_goods_id(db, goods_id)
+    
+    # 将商品对象转换为字典，并添加规格信息
+    goods_dict = goods.__dict__.copy()
+    goods_dict.pop('_sa_instance_state', None)
+    
+    # 处理规格和库存信息
+    specs_list = []
+    for spec in specs:
+        spec_dict = spec.__dict__.copy()
+        spec_dict.pop('_sa_instance_state', None)
+        
+        # 获取规格对应的库存
+        stock = dao.get_stock_by_spec_id(db, spec.id)
+        if stock:
+            stock_dict = stock.__dict__.copy()
+            stock_dict.pop('_sa_instance_state', None)
+            spec_dict['stock'] = stock_dict
+        else:
+            spec_dict['stock'] = None
+        
+        specs_list.append(spec_dict)
+    
+    goods_dict['specs'] = specs_list
+    return goods_dict
 
 
 def get_goods_list(db: Session, filters: dict, page: int = 1, page_size: int = 10):
     skip = (page - 1) * page_size
-    return dao.get_goods_list(db, filters, skip, page_size)
+    total, goods_list = dao.get_goods_list(db, filters, skip, page_size)
+    
+    # 遍历每个商品，获取库存信息
+    items = []
+    for goods in goods_list:
+        goods_dict = goods.__dict__.copy()
+        goods_dict.pop('_sa_instance_state', None)
+        
+        # 获取商品的所有规格
+        specs = dao.get_specs_by_goods_id(db, goods.id)
+        
+        # 汇总所有规格的库存，并计算平均预警阈值
+        total_stock = 0
+        total_warning_stock = 0
+        stock_count = 0
+        for spec in specs:
+            stock = dao.get_stock_by_spec_id(db, spec.id)
+            if stock:
+                total_stock += stock.stock_num
+                total_warning_stock += stock.warning_stock
+                stock_count += 1
+        
+        goods_dict['stock_num'] = total_stock
+        # 使用库存表中的预警阈值（取所有规格的平均值，如果没有库存则使用商品表的默认值）
+        if stock_count > 0:
+            goods_dict['warning_threshold'] = total_warning_stock // stock_count
+        else:
+            goods_dict['warning_threshold'] = goods.stock_warning
+        items.append(goods_dict)
+    
+    return total, items
 
 
 def update_stock(db: Session, spec_id: str, delta: int):

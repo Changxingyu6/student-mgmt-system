@@ -6,7 +6,6 @@ from model import Base
 from database import engine
 
 
-
 # 辅助函数：生成UUID字符串
 def gen_uuid():
     return str(uuid.uuid4())

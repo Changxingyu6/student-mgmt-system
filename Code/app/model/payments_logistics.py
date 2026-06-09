@@ -1,7 +1,9 @@
-from sqlalchemy.orm import declarative_base,relationship
+from sqlalchemy.orm import relationship
 from sqlalchemy import Column, BigInteger, String, DateTime, Text, ForeignKey, Index, DECIMAL, func
 from sqlalchemy.dialects.mysql import ENUM
-Base = declarative_base()
+
+# 从统一的 model 模块导入 Base
+from . import Base
 
 class Payments(Base):
     # 支付记录表

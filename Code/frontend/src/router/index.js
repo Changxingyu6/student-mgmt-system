@@ -100,21 +100,31 @@ router.beforeEach(async (to, from, next) => {
     next('/login')
   } else if (to.path === '/login' && token) {
     next('/')
-  } else if (to.meta.requiresAdmin) {
-    // 检查是否是管理员
-    let userInfo = userStore.userInfo
-    // 如果用户信息为空，尝试获取
-    if (!userInfo && token) {
-      try {
-        await userStore.getUserInfo()
-        userInfo = userStore.userInfo
-      } catch (error) {
-        console.error('获取用户信息失败:', error)
-        next('/login')
-        return
-      }
+  } else if (token && !userStore.userInfo) {
+    // 如果有token但没有用户信息，自动获取用户信息
+    try {
+      await userStore.getUserInfo()
+    } catch (error) {
+      console.error('获取用户信息失败:', error)
+      // 获取失败，清除token并跳转到登录页
+      userStore.logout()
+      next('/login')
+      return
     }
-    if (userInfo && userInfo.role === 'admin') {
+    
+    // 获取用户信息后继续判断是否需要管理员权限
+    if (to.meta.requiresAdmin) {
+      if (userStore.userInfo && userStore.userInfo.role === 'admin') {
+        next()
+      } else {
+        next('/')
+      }
+    } else {
+      next()
+    }
+  } else if (to.meta.requiresAdmin) {
+    // 已有用户信息，检查是否是管理员
+    if (userStore.userInfo && userStore.userInfo.role === 'admin') {
       next()
     } else {
       next('/')
