@@ -95,6 +95,17 @@ def get_users(
     return format_response(data=data)
 
 
+@router.get("/locked", summary="获取锁定用户列表")
+@require_roles(["admin"])
+def get_locked_users(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """获取被锁定的用户列表（仅管理员可访问）"""
+    data = user_service.get_locked_users(db)
+    return format_response(data=data, message="获取成功")
+
+
 @router.get("/{user_id}", response_model=ApiResponse[UserResponse], summary="获取用户详情")
 @require_roles(["admin"])
 def get_user_detail(
@@ -161,17 +172,6 @@ def delete_user(
     return format_response(data=result, message="删除成功")
 
 
-@router.get("/locked", summary="获取锁定用户列表")
-@require_roles(["admin"])
-def get_locked_users(
-    request: Request,
-    db: Session = Depends(get_db)
-):
-    """获取被锁定的用户列表（仅管理员可访问）"""
-    data = user_service.get_locked_users(db)
-    return format_response(data=data, message="获取成功")
-
-
 @router.post("/{user_id}/unlock", response_model=ApiResponse[dict], summary="解锁用户")
 @require_roles(["admin"])
 def unlock_user(
@@ -182,30 +182,6 @@ def unlock_user(
     """解锁用户账户（仅管理员可访问）"""
     data = user_service.unlock_user_account(db, user_id)
     return format_response(data=data, message="解锁成功")
-
-
-@router.post("/{user_id}/freeze", response_model=ApiResponse[dict], summary="冻结用户")
-@require_roles(["admin"])
-def freeze_user(
-    request: Request,
-    user_id: str,
-    db: Session = Depends(get_db)
-):
-    """冻结用户账户（仅管理员可访问）"""
-    data = user_service.freeze_user(db, user_id)
-    return format_response(data=data, message="冻结成功")
-
-
-@router.post("/{user_id}/unfreeze", response_model=ApiResponse[dict], summary="解冻用户")
-@require_roles(["admin"])
-def unfreeze_user(
-    request: Request,
-    user_id: str,
-    db: Session = Depends(get_db)
-):
-    """解冻用户账户（仅管理员可访问）"""
-    data = user_service.unfreeze_user(db, user_id)
-    return format_response(data=data, message="解冻成功")
 
 
 @router.post("/{user_id}/recharge", response_model=ApiResponse[dict], summary="充值余额")

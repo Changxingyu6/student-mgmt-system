@@ -9,10 +9,6 @@
               <el-icon><Plus /></el-icon>
               新增用户
             </el-button>
-            <el-button type="warning" @click="showLockedUsers = true">
-              <el-icon><Lock /></el-icon>
-              查看锁定用户
-            </el-button>
           </div>
         </div>
       </template>
@@ -20,14 +16,11 @@
       <!-- 状态筛选 -->
       <el-radio-group v-model="statusFilter" @change="loadUsers" style="margin-bottom: 20px">
         <el-radio-button value="">全部</el-radio-button>
-        <el-radio-button value="active">活跃</el-radio-button>
-        <el-radio-button value="frozen">冻结</el-radio-button>
         <el-radio-button value="locked">锁定</el-radio-button>
       </el-radio-group>
 
       <!-- 用户列表表格 -->
       <el-table :data="tableData" border style="width: 100%">
-        <el-table-column prop="id" label="ID" width="280" />
         <el-table-column prop="username" label="用户名" width="150" />
         <el-table-column prop="nickname" label="昵称" width="150" />
         <el-table-column prop="user_level" label="等级" width="120">
@@ -42,31 +35,24 @@
             ¥{{ row.balance }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag v-if="row.status === 'frozen'" type="info">冻结</el-tag>
-            <el-tag v-else-if="row.is_locked" type="danger">锁定</el-tag>
+            <el-tag v-if="row.is_locked" type="danger">锁定</el-tag>
             <el-tag v-else type="success">正常</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180">
+        <el-table-column prop="create_time" label="创建时间" width="180">
           <template #default="{ row }">
-            {{ formatDate(row.created_at) }}
+            {{ formatDate(row.create_time) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="300" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="showEditDialog(row)">
               编辑
             </el-button>
             <el-button v-if="row.is_locked" type="success" size="small" @click="handleUnlock(row)">
               解锁
-            </el-button>
-            <el-button v-if="row.status === 'frozen'" type="success" size="small" @click="handleUnfreeze(row)">
-              解冻
-            </el-button>
-            <el-button v-if="row.status === 'active' && !row.is_locked" type="warning" size="small" @click="handleFreeze(row)">
-              冻结
             </el-button>
             <el-button type="success" size="small" @click="showRechargeDialog(row)">
               充值
@@ -119,12 +105,6 @@
         <el-form-item v-if="!isEdit" label="初始余额">
           <el-input-number v-model="userForm.balance" :min="0" :precision="2" />
         </el-form-item>
-        <el-form-item v-if="!isEdit" label="状态">
-          <el-select v-model="userForm.status">
-            <el-option label="活跃" value="active" />
-            <el-option label="冻结" value="frozen" />
-          </el-select>
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showUserDialog = false">取消</el-button>
@@ -147,40 +127,16 @@
         <el-button type="primary" @click="handleRecharge">确认充值</el-button>
       </template>
     </el-dialog>
-
-    <!-- 锁定用户弹窗 -->
-    <el-dialog v-model="showLockedUsers" title="被锁定的用户" width="800px">
-      <el-table :data="lockedUsers" border style="width: 100%">
-        <el-table-column prop="id" label="ID" width="280" />
-        <el-table-column prop="username" label="用户名" width="150" />
-        <el-table-column prop="nickname" label="昵称" width="150" />
-        <el-table-column prop="failed_attempts" label="失败次数" width="100" />
-        <el-table-column prop="lock_count" label="锁定次数" width="100">
-          <template #default="{ row }">
-            <el-tag type="warning">{{ row.lock_count }}次</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="120">
-          <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleUnlock(row)">
-              解锁
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Lock } from '@element-plus/icons-vue'
-import { getUsers, getLockedUsers, unlockUser, freezeUser, unfreezeUser, createUser, updateUser, deleteUser, rechargeBalance } from '@/api/user'
+import { Plus } from '@element-plus/icons-vue'
+import { getUsers, unlockUser, createUser, updateUser, deleteUser, rechargeBalance } from '@/api/user'
 
 const tableData = ref([])
-const lockedUsers = ref([])
-const showLockedUsers = ref(false)
 const showUserDialog = ref(false)
 const showRecharge = ref(false)
 const isEdit = ref(false)
@@ -200,8 +156,7 @@ const userForm = reactive({
   phone: '',
   email: '',
   user_level: '青铜会员',
-  balance: 0,
-  status: 'active'
+  balance: 0
 })
 
 const rechargeForm = reactive({
@@ -220,7 +175,14 @@ const getLevelTagType = (level) => {
 
 const formatDate = (date) => {
   if (!date) return ''
-  return new Date(date).toLocaleString('zh-CN')
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  const seconds = String(d.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
 const loadUsers = async () => {
@@ -228,24 +190,11 @@ const loadUsers = async () => {
     const res = await getUsers(pagination.page, pagination.limit)
     let users = res.data.data || []
     // 根据状态筛选
-    if (statusFilter.value) {
-      if (statusFilter.value === 'locked') {
-        users = users.filter(u => u.is_locked)
-      } else {
-        users = users.filter(u => u.status === statusFilter.value && !u.is_locked)
-      }
+    if (statusFilter.value === 'locked') {
+      users = users.filter(u => u.is_locked)
     }
     tableData.value = users
     pagination.total = res.data.total || 0
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-const loadLockedUsers = async () => {
-  try {
-    const res = await getLockedUsers()
-    lockedUsers.value = res.data || []
   } catch (error) {
     console.error(error)
   }
@@ -260,8 +209,7 @@ const showCreateDialog = () => {
     phone: '',
     email: '',
     user_level: '青铜会员',
-    balance: 0,
-    status: 'active'
+    balance: 0
   })
   showUserDialog.value = true
 }
@@ -305,41 +253,6 @@ const handleUnlock = async (row) => {
     await unlockUser(row.id)
     ElMessage.success('解锁成功')
     loadUsers()
-    loadLockedUsers()
-    showLockedUsers.value = false
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error(error)
-    }
-  }
-}
-
-const handleFreeze = async (row) => {
-  try {
-    await ElMessageBox.confirm('确定要冻结该用户吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    await freezeUser(row.id)
-    ElMessage.success('冻结成功')
-    loadUsers()
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error(error)
-    }
-  }
-}
-
-const handleUnfreeze = async (row) => {
-  try {
-    await ElMessageBox.confirm('确定要解冻该用户吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    await unfreezeUser(row.id)
-    ElMessage.success('解冻成功')
     loadUsers()
   } catch (error) {
     if (error !== 'cancel') {

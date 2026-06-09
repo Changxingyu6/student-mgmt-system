@@ -59,22 +59,6 @@ export function unlockUser(userId) {
   })
 }
 
-// 冻结用户（管理员）
-export function freezeUser(userId) {
-  return request({
-    url: `/users/${userId}/freeze`,
-    method: 'post'
-  })
-}
-
-// 解冻用户（管理员）
-export function unfreezeUser(userId) {
-  return request({
-    url: `/users/${userId}/unfreeze`,
-    method: 'post'
-  })
-}
-
 // 充值余额（管理员）
 export function rechargeBalance(userId, data) {
   return request({

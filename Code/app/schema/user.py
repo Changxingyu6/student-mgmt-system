@@ -10,13 +10,13 @@ from datetime import datetime
 class UserLoginRequest(BaseModel):
     """用户登录请求"""
     username: str = Field(..., description="用户名", min_length=3, max_length=50)
-    password: str = Field(..., description="密码", min_length=6)
+    password: str = Field(..., description="密码")
 
 
 class UserRegisterRequest(BaseModel):
     """用户注册请求"""
     username: str = Field(..., description="用户名", min_length=3, max_length=50)
-    password: str = Field(..., description="密码", min_length=6)
+    password: str = Field(..., description="密码")
     nickname: Optional[str] = Field(None, description="昵称", max_length=50)
     phone: Optional[str] = Field(None, description="手机号")
     email: Optional[EmailStr] = Field(None, description="邮箱")
@@ -46,13 +46,13 @@ class UserProfileUpdateRequest(BaseModel):
 class UserPasswordUpdateRequest(BaseModel):
     """修改密码请求"""
     old_password: str = Field(..., description="旧密码")
-    new_password: str = Field(..., description="新密码", min_length=6)
+    new_password: str = Field(..., description="新密码")
 
 
 class UserCreateRequest(BaseModel):
     """管理员创建用户请求"""
     username: str = Field(..., description="用户名", min_length=3, max_length=50)
-    password: str = Field(..., description="初始密码", min_length=6)
+    password: str = Field(..., description="初始密码")
     nickname: Optional[str] = Field(None, description="昵称", max_length=50)
     phone: Optional[str] = Field(None, description="手机号")
     email: Optional[EmailStr] = Field(None, description="邮箱")

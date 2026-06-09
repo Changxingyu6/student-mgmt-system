@@ -10,7 +10,6 @@ from fastapi import HTTPException, status
 from dao import user_dao as user_repo
 from utils import generate_salt, md5_hash, verify_password, create_access_token
 from utils.logger import get_logger
-from utils.password_policy import validate_password
 from services.log_service import LoginLogService
 from schema.user import UserResponse
 
@@ -79,7 +78,8 @@ def _convert_user_to_response(user) -> dict:
         "failed_attempts": user.failed_attempts or 0,
         "lock_count": user.lock_count or 0,
         "create_time": user.create_time,
-        "update_time": user.update_time
+        "update_time": user.update_time,
+        "role": user.role.role_name if user.role else "user"
     }
 
 
@@ -237,8 +237,6 @@ def update_user_password(
         logger.warn(f"修改密码失败 - 旧密码不正确 - 用户ID: {user_id}")
         raise HTTPException(status_code=400, detail="旧密码不正确")
     
-    validate_password(new_password)
-    
     new_salt = generate_salt()
     hashed_new_password = md5_hash(new_salt, new_password)
     
@@ -263,8 +261,6 @@ def register_user(
     if user_repo.check_username_exists(db, username):
         logger.warn(f"注册失败 - 用户名已存在 - 用户名: {username}")
         raise HTTPException(status_code=400, detail="用户名已存在")
-    
-    validate_password(password)
     
     salt = generate_salt()
     hashed_password = md5_hash(salt, password)
@@ -349,8 +345,6 @@ def create_user(
     if user_repo.check_username_exists(db, username):
         raise HTTPException(status_code=400, detail="用户名已存在")
     
-    validate_password(password)
-    
     salt = generate_salt()
     hashed_password = md5_hash(salt, password)
     
@@ -411,32 +405,6 @@ def delete_user(db: Session, user_id: str) -> dict:
     return {"id": user_id, "message": "删除成功"}
 
 
-def freeze_user(db: Session, user_id: str) -> dict:
-    """管理员冻结用户账户"""
-    logger.info(f"管理员冻结用户 - 用户ID: {user_id}")
-    
-    user = user_repo.freeze_user(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    
-    logger.info(f"冻结用户成功 - 用户ID: {user_id}")
-    
-    return _convert_user_to_response(user)
-
-
-def unfreeze_user(db: Session, user_id: str) -> dict:
-    """管理员解冻用户账户"""
-    logger.info(f"管理员解冻用户 - 用户ID: {user_id}")
-    
-    user = user_repo.unfreeze_user(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    
-    logger.info(f"解冻用户成功 - 用户ID: {user_id}")
-    
-    return _convert_user_to_response(user)
-
-
 def recharge_balance(db: Session, user_id: str, amount: float, reason: str = None) -> dict:
     """管理员为用户充值余额"""
     logger.info(f"管理员充值余额 - 用户ID: {user_id}, 金额: {amount}")
@@ -455,6 +423,7 @@ def recharge_balance(db: Session, user_id: str, amount: float, reason: str = Non
 
 def deduct_balance(db: Session, user_id: str, amount: float, reason: str = None) -> dict:
     """管理员扣除用户余额"""
+    from decimal import Decimal
     logger.info(f"管理员扣除余额 - 用户ID: {user_id}, 金额: {amount}")
     
     if amount <= 0:
@@ -464,10 +433,11 @@ def deduct_balance(db: Session, user_id: str, amount: float, reason: str = None)
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     
-    if (user.balance or 0) < amount:
+    amount_decimal = Decimal(str(amount))
+    if Decimal(str(user.balance or 0)) < amount_decimal:
         raise HTTPException(status_code=400, detail="余额不足")
     
-    user = user_repo.update_balance(db, user_id, -amount)
+    user = user_repo.update_balance(db, user_id, -float(amount_decimal))
     
     logger.info(f"扣除成功 - 用户ID: {user_id}, 余额: {user.balance}")
     
@@ -583,6 +553,7 @@ def check_balance_sufficient(db: Session, user_id: str, amount: float) -> bool:
     Returns:
         bool: 余额充足并扣减成功返回True，不足返回False
     """
+    from decimal import Decimal
     logger.debug(f"检查余额 - 用户ID: {user_id}, 金额: {amount}")
     
     if amount <= 0:
@@ -594,12 +565,14 @@ def check_balance_sufficient(db: Session, user_id: str, amount: float) -> bool:
         logger.warn(f"检查余额失败 - 用户不存在 - 用户ID: {user_id}")
         return False
     
-    if balance < amount:
+    amount_decimal = Decimal(str(amount))
+    balance_decimal = Decimal(str(balance))
+    if balance_decimal < amount_decimal:
         logger.warn(f"检查余额失败 - 余额不足 - 用户ID: {user_id}, 余额: {balance}, 需要: {amount}")
         return False
     
     # 余额充足，直接扣减
-    user_repo.deduct_balance(db, user_id, amount, "余额支付")
+    user_repo.deduct_balance(db, user_id, float(amount_decimal), "余额支付")
     
-    logger.debug(f"余额扣减成功 - 用户ID: {user_id}, 扣减金额: {amount}, 剩余余额: {balance - amount}")
+    logger.debug(f"余额扣减成功 - 用户ID: {user_id}, 扣减金额: {amount}, 剩余余额: {balance_decimal - amount_decimal}")
     return True

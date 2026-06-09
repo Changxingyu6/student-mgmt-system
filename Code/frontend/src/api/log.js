@@ -8,12 +8,3 @@ export function getLoginLogs(params = {}) {
     params
   })
 }
-
-// 获取操作日志
-export function getOperationLogs(params = {}) {
-  return request({
-    url: '/logs/operation',
-    method: 'get',
-    params
-  })
-}
