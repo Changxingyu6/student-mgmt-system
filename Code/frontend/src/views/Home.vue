@@ -1,20 +1,19 @@
 <template>
   <div class="layout-container">
-    <el-container>
-      <!-- 侧边栏 -->
-      <el-aside width="200px">
-        <Sidebar />
-      </el-aside>
+    <el-container direction="vertical">
+      <!-- 顶部 Header（铺满全宽） -->
+      <el-header class="layout-header">
+        <Header />
+      </el-header>
 
-      <!-- 主内容区 -->
-      <el-container>
-        <!-- 顶部栏 -->
-        <el-header>
-          <Header />
-        </el-header>
+      <el-container class="layout-body">
+        <!-- 左侧导航栏 -->
+        <el-aside width="200px" class="layout-aside">
+          <Sidebar />
+        </el-aside>
 
-        <!-- 内容区 -->
-        <el-main>
+        <!-- 右侧内容区 -->
+        <el-main class="layout-main">
           <router-view />
         </el-main>
       </el-container>
@@ -36,20 +35,27 @@ import AIFloatButton from '@/components/AIFloatButton.vue'
   height: 100vh;
 }
 
-.el-aside {
-  background-color: #304156;
-  color: #fff;
-}
-
-.el-header {
+.layout-header {
   background-color: #fff;
   border-bottom: 1px solid #e6e6e6;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 60px;
+  padding: 0 20px;
 }
 
-.el-main {
-  background-color: #f0f2f5;
+.layout-aside {
+  background-color: #304156;
+  color: #fff;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+.layout-main {
+  background-color: #f5f7fa;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+  padding: 0;
 }
 </style>

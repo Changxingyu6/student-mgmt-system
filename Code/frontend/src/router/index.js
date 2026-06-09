@@ -51,6 +51,36 @@ const routes = [
         path: 'ai',
         name: 'AIChat',
         component: () => import('@/views/AIChat.vue')
+      },
+      {
+        path: 'goods',
+        name: 'Goods',
+        component: () => import('@/views/Goods.vue')
+      },
+      {
+        path: 'coupons',
+        name: 'Coupons',
+        component: () => import('@/views/Coupons.vue')
+      },
+      {
+        path: 'payments',
+        name: 'Payments',
+        component: () => import('@/views/Payments.vue')
+      },
+      {
+        path: 'logistics',
+        name: 'Logistics',
+        component: () => import('@/views/Logistics.vue')
+      },
+      {
+        path: 'refunds',
+        name: 'Refunds',
+        component: () => import('@/views/Refunds.vue')
+      },
+      {
+        path: 'return-logistics',
+        name: 'ReturnLogistics',
+        component: () => import('@/views/ReturnLogistics.vue')
       }
     ]
   }
