@@ -139,22 +139,18 @@ def get_activities(
 
 
 def create_activity(db: Session, activity: ActivitiesCreate):
-    activity_data = activity.model_dump(exclude={"goods_ids", "order_ids"})
+    activity_data = activity.model_dump(exclude={"goods_ids"})
     db_activity = coupon_dao.create_activity(db, activity_data)
 
     if activity.goods_ids:
         for gid in set(activity.goods_ids):
             coupon_dao.create_activity_goods(db, db_activity.id, gid)
 
-    if activity.order_ids:
-        for oid in set(activity.order_ids):
-            coupon_dao.create_activity_orders(db, db_activity.id, oid)
-
     return db_activity
 
 
 def update_activity(db: Session, activity_id: str, activity_update: ActivitiesUpdate):
-    update_data = activity_update.model_dump(exclude_unset=True, exclude={"goods_ids", "order_ids"})
+    update_data = activity_update.model_dump(exclude_unset=True, exclude={"goods_ids"})
     db_activity = coupon_dao.update_activity(db, activity_id, update_data)
     if not db_activity:
         return None
@@ -164,11 +160,6 @@ def update_activity(db: Session, activity_id: str, activity_update: ActivitiesUp
         for gid in set(activity_update.goods_ids):
             coupon_dao.create_activity_goods(db, activity_id, gid)
 
-    if activity_update.order_ids is not None:
-        coupon_dao.soft_delete_activity_orders(db, activity_id)
-        for oid in set(activity_update.order_ids):
-            coupon_dao.create_activity_orders(db, activity_id, oid)
-
     return db_activity
 
 
@@ -176,7 +167,6 @@ def delete_activity(db: Session, activity_id: str) -> bool:
     success = coupon_dao.delete_activity(db, activity_id)
     if success:
         coupon_dao.soft_delete_activity_goods(db, activity_id)
-        coupon_dao.soft_delete_activity_orders(db, activity_id)
     return success
 
 

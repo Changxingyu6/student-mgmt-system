@@ -331,8 +331,8 @@ const loadCoupons = async () => {
       coupons_name: couponSearch.name || undefined,
       type: couponSearch.type || undefined
     })
-    couponList.value = res.data || res || []
-    couponPage.total = (res.data?.total) || couponList.value.length || 0
+    couponList.value = res.data?.items || res.data || []
+    couponPage.total = res.data?.total || 0
   } catch (e) {
     console.error(e)
     ElMessage.error('加载优惠券失败')
@@ -426,12 +426,12 @@ const loadUserCoupons = async () => {
       params.user_id = userStore.userInfo?.id
     }
     const res = await listUserCoupons(params)
-    let list = res.data || res || []
+    let list = res.data?.items || res.data || []
     if (!isAdmin.value && userStore.userInfo?.id) {
       list = list.filter(c => c.user_id === userStore.userInfo.id)
     }
     userCouponList.value = list
-    userCouponPage.total = list.length || 0
+    userCouponPage.total = res.data?.total || list.length || 0
   } catch (e) {
     console.error(e)
   } finally {
@@ -465,8 +465,8 @@ const loadActivities = async () => {
   activityLoading.value = true
   try {
     const res = await listActivities({ page: activityPage.page, page_size: activityPage.page_size })
-    activityList.value = res.data || res || []
-    activityPage.total = activityList.value.length || 0
+    activityList.value = res.data?.items || res.data || []
+    activityPage.total = res.data?.total || 0
   } catch (e) {
     console.error(e)
   } finally {
@@ -527,8 +527,8 @@ const loadUseLogs = async () => {
   useLogLoading.value = true
   try {
     const res = await listUseLogs({ page: useLogPage.page, page_size: useLogPage.page_size })
-    useLogList.value = res.data || res || []
-    useLogPage.total = useLogList.value.length || 0
+    useLogList.value = res.data?.items || res.data || []
+    useLogPage.total = res.data?.total || 0
   } catch (e) {
     console.error(e)
   } finally {

@@ -34,7 +34,7 @@ def get_coupon_list(
     if filters.get('status') is not None:
         query = query.filter(Coupon.status == filters['status'])
     total = query.count()
-    items = query.order_by(Coupon.created_at.desc()).offset(skip).limit(limit).all()
+    items = query.order_by(Coupon.valid_start_time.desc()).offset(skip).limit(limit).all()
     return items, total
 
 
@@ -51,7 +51,8 @@ def update_coupon(db: Session, coupon_id: str, update_data: Dict[str, Any]) -> O
     if not coupon:
         return None
     for field, value in update_data.items():
-        setattr(coupon, field, value)
+        if field not in ('id', 'is_deleted'):  # 排除不可修改的字段
+            setattr(coupon, field, value)
     db.commit()
     db.refresh(coupon)
     return coupon
@@ -86,7 +87,7 @@ def get_user_coupon_list(
     if filters.get('status') is not None:
         query = query.filter(UserCoupon.status == filters['status'])
     total = query.count()
-    items = query.order_by(UserCoupon.created_at.desc()).offset(skip).limit(limit).all()
+    items = query.order_by(UserCoupon.get_time.desc()).offset(skip).limit(limit).all()
     return items, total
 
 
@@ -103,7 +104,8 @@ def update_user_coupon(db: Session, uc_id: str, update_data: Dict[str, Any]) -> 
     if not uc:
         return None
     for field, value in update_data.items():
-        setattr(uc, field, value)
+        if field not in ('id', 'is_deleted'):  # 排除不可修改的字段
+            setattr(uc, field, value)
     db.commit()
     db.refresh(uc)
     return uc
@@ -190,7 +192,7 @@ def get_activity_list(
     if filters.get('status') is not None:
         query = query.filter(Activities.status == filters['status'])
     total = query.count()
-    items = query.order_by(Activities.created_at.desc()).offset(skip).limit(limit).all()
+    items = query.order_by(Activities.start_time.desc()).offset(skip).limit(limit).all()
     return items, total
 
 
@@ -207,7 +209,8 @@ def update_activity(db: Session, activity_id: str, update_data: Dict[str, Any]) 
     if not activity:
         return None
     for field, value in update_data.items():
-        setattr(activity, field, value)
+        if field not in ('id', 'is_deleted'):  # 排除不可修改的字段
+            setattr(activity, field, value)
     db.commit()
     db.refresh(activity)
     return activity

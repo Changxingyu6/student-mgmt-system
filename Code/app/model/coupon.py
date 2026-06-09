@@ -50,16 +50,16 @@ class UserCoupon(Base):
     coupons = relationship('Coupon', back_populates='user_coupons')
     coupon_use_log = relationship('CouponUseLog', back_populates='user_coupon')
 
-# class CouponUseLog(Base):
-#     __tablename__ = 'coupon_use_log'
-#     id = Column(VARCHAR(50),primary_key=True,comment='主键ID')
-#     user_coupon_id = Column(VARCHAR(50),ForeignKey('user_coupons.id'),nullable=False,comment='用户券ID')
-#     user_id = Column(VARCHAR(50),ForeignKey('users.id'),nullable=False,comment='关联用户ID')
-#     status = Column(Integer,nullable=False,default=0,comment='0使用失败,1使用成功')
-#     order_id = Column(VARCHAR(50),ForeignKey('orders.id'),comment='关联订单ID')
-#     remark = Column(VARCHAR(255),nullable=True,comment='备注信息')
-#     is_deleted = Column(Integer, default=0, comment='0正常,1删除')
-#     user_coupon = relationship('UserCoupon', back_populates='coupon_use_log')
+class CouponUseLog(Base):
+    __tablename__ = 'coupon_use_log'
+    id = Column(VARCHAR(50),primary_key=True,comment='主键ID')
+    user_coupon_id = Column(VARCHAR(50),ForeignKey('user_coupons.id'),nullable=False,comment='用户券ID')
+    user_id = Column(VARCHAR(50),ForeignKey('users.id'),nullable=False,comment='关联用户ID')
+    status = Column(Integer,nullable=False,default=0,comment='0使用失败,1使用成功')
+    order_id = Column(VARCHAR(50),ForeignKey('orders.id'),comment='关联订单ID')
+    remark = Column(VARCHAR(255),nullable=True,comment='备注信息')
+    is_deleted = Column(Integer, default=0, comment='0正常,1删除')
+    user_coupon = relationship('UserCoupon', back_populates='coupon_use_log')
 
 
 class Activities(Base):
