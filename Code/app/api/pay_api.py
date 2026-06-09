@@ -17,6 +17,13 @@ def pay_query_api(order_id: UUIDStr, db=Depends(get_db)):
         raise HTTPException(404, 'Not Found')
     return result
 
+@router.get('/pay/user/{user_id}')
+def pay_query_by_user_id_api(user_id: UUIDStr, db=Depends(get_db)):
+    """查询用户的所有支付记录"""
+    result = pay_func.pay_query_by_user_id_func(user_id, db)
+    return format_response(data=result, message="获取用户支付记录成功")
+
+
 @router.post('/pay')
 def pay_insert_api(ordersdata: pay_request.PayRequest, db=Depends(get_db)):
     """创建支付记录"""

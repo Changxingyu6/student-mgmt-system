@@ -55,6 +55,16 @@ def pay_update_dao(orderdata: dict, db: Session) -> bool:
             setattr(order, key, value)
     return True
 
+# 查询用户的所有支付记录
+def pay_query_by_user_id_dao(user_id, db: Session):
+    data = db.query(Payments).filter(
+        Payments.user_id == user_id,
+        Payments.is_deleted == "0"
+    ).order_by(Payments.create_time.desc()).all()
+    if not data:
+        return []
+    return [{k: v for k, v in item.__dict__.items() if not k.startswith('_')} for item in data]
+
 # 删除数据
 def pay_delete_dao(pay_id, db: Session) -> bool:
     data = db.query(Payments).filter(

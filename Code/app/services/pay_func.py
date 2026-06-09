@@ -27,6 +27,11 @@ def pay_delete_func(order_id, db):
     return pay_dao.pay_delete_dao(order_id, db)
 
 
+def pay_query_by_user_id_func(user_id, db):
+    """查询用户的所有支付记录"""
+    return pay_dao.pay_query_by_user_id_dao(user_id, db)
+
+
 def verify_pay_password(user_id: str, pay_password: str, db) -> dict:
     """
     验证支付密码
@@ -196,6 +201,9 @@ def process_payment(pay_id: str, user_id: str, pay_password: str, db) -> dict:
         "logistics_status": "待发货",
         "track_info": "等待商家发货"
     }, db)
+
+    # 6. 提交事务
+    db.commit()
 
     return {
         "success": True,
