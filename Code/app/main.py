@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from fastapi import HTTPException
 from api import user_api_router, role_api_router, address_api_router, log_api_router, ai_api_router, data_router, shopping_cart,coupon_api_router,goods_router
+from api import user_api_router, role_api_router, address_api_router, log_api_router, ai_api_router, data_router, shopping_cart,pay_api_router
 from utils.jwt_utils import decode_access_token
 from utils.logger import get_logger
 
@@ -18,7 +19,6 @@ WHITELIST = [
     "/redoc",
     "/openapi.json",
     "/data-analysis/users/weekly"
-    "/goods"
 ]
 
 
@@ -102,8 +102,6 @@ app.include_router(log_api_router)
 app.include_router(ai_api_router)
 app.include_router(data_router)
 app.include_router(shopping_cart)
-app.include_router(coupon_api_router)
-app.include_router(goods_router)
 
 if __name__ == "__main__":
     import uvicorn
