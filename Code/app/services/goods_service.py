@@ -142,14 +142,23 @@ def get_goods_list(db: Session, filters: dict, page: int = 1, page_size: int = 1
         # 获取商品的所有规格
         specs = dao.get_specs_by_goods_id(db, goods.id)
         
-        # 汇总所有规格的库存
+        # 汇总所有规格的库存，并计算平均预警阈值
         total_stock = 0
+        total_warning_stock = 0
+        stock_count = 0
         for spec in specs:
             stock = dao.get_stock_by_spec_id(db, spec.id)
             if stock:
                 total_stock += stock.stock_num
+                total_warning_stock += stock.warning_stock
+                stock_count += 1
         
         goods_dict['stock_num'] = total_stock
+        # 使用库存表中的预警阈值（取所有规格的平均值，如果没有库存则使用商品表的默认值）
+        if stock_count > 0:
+            goods_dict['warning_threshold'] = total_warning_stock // stock_count
+        else:
+            goods_dict['warning_threshold'] = goods.stock_warning
         items.append(goods_dict)
     
     return total, items
