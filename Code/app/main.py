@@ -105,6 +105,8 @@ app.include_router(pay_api_router)
 app.include_router(logistics_api_router)
 app.include_router(refund_api_router)
 app.include_router(return_logistics_api_router)
+app.include_router(coupon_api_router)
+app.include_router(goods_router)
 
 if __name__ == "__main__":
     import uvicorn
