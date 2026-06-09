@@ -7,9 +7,9 @@ from datetime import datetime, timezone
 from sqlalchemy import and_
 
 
-def pay_query_func(pay_id, db):
+def pay_query_func(order_id, db):
     """查询支付记录"""
-    return pay_dao.pay_query_dao(pay_id, db)
+    return pay_dao.pay_query_dao(order_id, db)
 
 
 def pay_insert_func(orderdata, db):
@@ -44,28 +44,6 @@ def verify_pay_password(user_id: str, pay_password: str, db) -> dict:
         return {"success": False, "message": "支付密码错误"}
 
     return {"success": True, "message": "支付密码验证通过"}
-
-
-def check_user_balance(user_id: str, amount: float, db) -> dict:
-    """
-    检查用户余额
-
-    参数:
-        user_id: 用户ID
-        amount: 支付金额
-        db: 数据库会话
-
-    返回:
-        dict: {"success": bool, "balance": float, "message": str}
-    """
-    balance = user_dao.get_user_balance(db, user_id)
-    if balance is None:
-        return {"success": False, "balance": 0, "message": "用户不存在"}
-
-    if balance < amount:
-        return {"success": False, "balance": balance, "message": "余额不足"}
-
-    return {"success": True, "balance": balance, "message": "余额充足"}
 
 
 def check_payment_expired(payment_data: dict, db) -> dict:
@@ -154,7 +132,6 @@ def close_expired_payments(db) -> dict:
             "message": f"关闭过期支付记录失败: {str(e)}",
             "closed_count": 0
         }
-
 
 def process_payment(pay_id: str, user_id: str, pay_password: str, db) -> dict:
     """
