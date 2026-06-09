@@ -9,13 +9,13 @@ router = APIRouter(
     prefix="/pay_api",
     tags=["支付模块"])
 
-@router.get('/pay/{pay_id}')
-def pay_query_api(pay_id: UUIDStr, db=Depends(get_db)):
-    """查询支付记录"""
-    result = pay_func.pay_query_func(pay_id, db)
+@router.get('/pay/{order_id}')
+def pay_query_api(order_id: UUIDStr, db=Depends(get_db)):
+    """查询支付记录（通过订单ID）"""
+    result = pay_func.pay_query_func(order_id, db)
     if not result:
         raise HTTPException(404, 'Not Found')
-    return format_response(data=result, message="获取支付记录成功")
+    return result
 
 @router.post('/pay')
 def pay_insert_api(ordersdata: pay_request.PayRequest, db=Depends(get_db)):
@@ -57,10 +57,10 @@ def pay_update_api(ordersdata: pay_request.Payupdata, db=Depends(get_db)):
     else:
         raise HTTPException(404, 'Not Found')
 
-@router.delete('/pay/{pay_id}')
-def pay_delete_api(pay_id: UUIDStr, db=Depends(get_db)):
+@router.delete('/pay/{order_id}')
+def pay_delete_api(order_id: UUIDStr, db=Depends(get_db)):
     """删除支付记录"""
-    result = pay_func.pay_delete_func(pay_id, db)
+    result = pay_func.pay_delete_func(order_id, db)
     if result:
         return format_response(message="支付记录已删除")
     raise HTTPException(404, 'Not Found')

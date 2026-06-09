@@ -23,7 +23,7 @@ class IsNormal(str, Enum):
 
 
 class PayRequest(BaseModel):
-    """支付请求模型"""
+    """支付记录请求模型"""
     order_id: IDStr = Field(..., description="订单ID")
     user_id: IDStr = Field(..., description="用户ID")
     pay_amount: Decimal = Field(..., gt=0, description="支付金额必须大于0")

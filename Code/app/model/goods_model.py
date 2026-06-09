@@ -1,12 +1,10 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, Integer, Float, DateTime, Text, ForeignKey, Index, VARCHAR, DECIMAL
-from sqlalchemy.orm import relationship
-
+from sqlalchemy.orm import declarative_base, relationship
+from model import Base
 from database import engine
 
-# 从统一的 model 模块导入 Base
-from . import Base
 
 # 辅助函数：生成UUID字符串
 def gen_uuid():

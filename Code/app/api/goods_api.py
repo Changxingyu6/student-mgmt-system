@@ -9,25 +9,23 @@ from schema.goods_schema import (
     CategoryCreate, CategoryUpdate, CategoryResponse
 )
 from dao import goods_dao as dao
-from utils import format_response
 
 goods_router = APIRouter(prefix="/goods", tags=["商品管理"])
 
 
 # ========== 商品分类接口 ==========
 #新增商品分类
-@goods_router.post("/category", summary="新增分类")
+@goods_router.post("/category", response_model=CategoryResponse, summary="新增分类")
 def create_category(category_data: CategoryCreate, db: Session = Depends(get_db)):
-    result = service.create_category(db, category_data.model_dump())
-    return format_response(data=result, message="新增分类成功")
+    return service.create_category(db, category_data.model_dump())
 
 #修改商品分类
-@goods_router.put("/category/{category_id}", summary="修改分类")
+@goods_router.put("/category/{category_id}", response_model=CategoryResponse, summary="修改分类")
 def update_category(category_id: str, category_data: CategoryUpdate, db: Session = Depends(get_db)):
     result = service.update_category(db, category_id, category_data.model_dump(exclude_none=True))
     if not result:
         raise HTTPException(status_code=404, detail="分类不存在")
-    return format_response(data=result, message="修改分类成功")
+    return result
 
 #删除商品分类
 @goods_router.delete("/category/{category_id}", summary="删除分类")
@@ -36,37 +34,36 @@ def delete_category(category_id: str, db: Session = Depends(get_db)):
         success = service.delete_category(db, category_id)
         if not success:
             raise HTTPException(status_code=404, detail="分类不存在")
-        return format_response(message="删除成功")
+        return {"message": "删除成功"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 #查询商品分类
 @goods_router.get("/category", summary="获取分类列表")
 def list_categories(skip: int = 0, limit: int = 30, db: Session = Depends(get_db)):
-    result = dao.get_all_categories(db, skip, limit)
-    return format_response(data=result, message="获取分类列表成功")
+    return dao.get_all_categories(db, skip, limit)
 
 
 
 
 # ========== 商品接口 ==========
 #添加商品
-@goods_router.post("/", summary="新增商品")
+@goods_router.post("/", response_model=GoodsResponse, summary="新增商品")
 def create_goods(goods_data: GoodsCreate, db: Session = Depends(get_db)):
     try:
         result = service.create_goods(db, goods_data)
-        return format_response(data=result, message="新增商品成功")
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 #修改商品
-@goods_router.put("/{goods_id}", summary="编辑商品")
+@goods_router.put("/{goods_id}", response_model=GoodsResponse, summary="编辑商品")
 def update_goods(goods_id: str, goods_data: GoodsUpdate, db: Session = Depends(get_db)):
     result = service.update_goods(db, goods_id, goods_data)
     if not result:
         raise HTTPException(status_code=404, detail="商品不存在")
-    return format_response(data=result, message="修改商品成功")
+    return result
 
 
 #删除商品
@@ -75,15 +72,15 @@ def delete_goods(goods_id: str, db: Session = Depends(get_db)):
     success = service.delete_goods(db, goods_id)
     if not success:
         raise HTTPException(status_code=404, detail="商品不存在")
-    return format_response(message="删除成功")
+    return {"message": "删除成功"}
 
 #查询商品
-@goods_router.get("/{goods_id}", summary="获取商品详情")
+@goods_router.get("/{goods_id}", response_model=GoodsResponse, summary="获取商品详情")
 def get_goods_detail(goods_id: str, db: Session = Depends(get_db)):
     goods = service.get_goods_detail(db, goods_id)
     if not goods:
         raise HTTPException(status_code=404, detail="商品不存在")
-    return format_response(data=goods, message="获取商品详情成功")
+    return goods
 
 
 @goods_router.get("/", summary="获取商品列表（支持多条件筛选）")
@@ -110,7 +107,12 @@ def list_goods(
     filters = {k: v for k, v in filters.items() if v is not None}
 
     total, items = service.get_goods_list(db, filters, page, page_size)
-    return format_response(data={"total": total, "page": page, "page_size": page_size, "items": items}, message="获取商品列表成功")
+    return {
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "items": items
+    }
 
 
 # ========== 库存接口 ==========
@@ -123,7 +125,7 @@ def adjust_spec_stock(
 ):
     try:
         service.update_stock(db, spec_id, delta)
-        return format_response(message="库存调整成功")
+        return {"message": "库存调整成功"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -144,5 +146,5 @@ def low_stock_list(custom_threshold: Optional[int] = Query(None), db: Session = 
             "stock_num": stock.stock_num,
             "warning_threshold": stock.warning_stock
         })
-    return format_response(data={"items": items, "total": len(items)}, message="获取库存预警列表成功")
+    return {"items": items, "total": len(items)}
 

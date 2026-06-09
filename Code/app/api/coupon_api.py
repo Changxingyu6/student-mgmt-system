@@ -6,10 +6,9 @@ from utils import format_response, require_roles
 from schema.coupon_request import (
     CouponCreate, CouponUpdate, CouponQuery,
     UserCouponCreate, UserCouponUpdate, UserCouponQuery,
-    CouponUseLogCreate, CouponUseLogUpdate, CouponUseLogQuery,
+    # CouponUseLogCreate, CouponUseLogUpdate, CouponUseLogQuery,
     ActivitiesCreate, ActivitiesUpdate, ActivitiesQuery,
     ActivityGoodsCreate, ActivityGoodsQuery,
-    ActivityOrdersCreate, ActivityOrdersQuery
 )
 from services import coupon_service
 
@@ -17,7 +16,7 @@ router1 = APIRouter(prefix="/coupons", tags=["优惠券管理"])
 router2 = APIRouter(prefix="/usercoupons",tags=['用户优惠券管理'])
 router3 = APIRouter(prefix="/activities",tags=['营销活动管理'])
 router4 = APIRouter(prefix="/activitiesgoods",tags=['营销商品管理'])
-router5 = APIRouter(prefix="/activitiesorders",tags=['营销订单管理'])
+# router5 = APIRouter(prefix="/activitiesorders",tags=['营销订单管理'])
 
 
 # ==================== 优惠券 Coupon API ====================
@@ -118,48 +117,48 @@ def delete_user_coupon(uc_id: str, db: Session = Depends(get_db)):
 
 # ==================== 优惠券使用日志 CouponUseLog API ====================
 
-@router1.post("/use-logs")
-def create_use_log(log: CouponUseLogCreate, db: Session = Depends(get_db)):
-    data = coupon_service.create_use_log(db, log)
-    return format_response(data=data, message="使用日志创建成功")
-
-
-@router1.get("/use-logs")
-def get_use_logs(
-    user_id: Optional[str] = Query(None),
-    user_coupon_id: Optional[str] = Query(None),
-    status: Optional[int] = Query(None),
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-    db: Session = Depends(get_db)
-):
-    skip = (page - 1) * page_size
-    data = coupon_service.get_use_logs(db, user_id, user_coupon_id, status, skip, page_size)
-    return format_response(data=data)
-
-
-@router1.get("/use-logs/{log_id}")
-def get_use_log(log_id: str, db: Session = Depends(get_db)):
-    data = coupon_service.get_use_log(db, log_id)
-    if not data:
-        return format_response(code=404, message="使用日志不存在")
-    return format_response(data=data)
-
-
-@router1.put("/use-logs/{log_id}")
-def update_use_log(log_id: str, log_update: CouponUseLogUpdate, db: Session = Depends(get_db)):
-    data = coupon_service.update_use_log(db, log_id, log_update)
-    if not data:
-        return format_response(code=404, message="使用日志不存在")
-    return format_response(data=data, message="使用日志更新成功")
-
-
-@router1.delete("/use-logs/{log_id}")
-def delete_use_log(log_id: str, db: Session = Depends(get_db)):
-    success = coupon_service.delete_use_log(db, log_id)
-    if not success:
-        return format_response(code=404, message="使用日志不存在")
-    return format_response(message="使用日志已删除")
+# @router1.post("/use-logs")
+# def create_use_log(log: CouponUseLogCreate, db: Session = Depends(get_db)):
+#     data = coupon_service.create_use_log(db, log)
+#     return format_response(data=data, message="使用日志创建成功")
+#
+#
+# @router1.get("/use-logs")
+# def get_use_logs(
+#     user_id: Optional[str] = Query(None),
+#     user_coupon_id: Optional[str] = Query(None),
+#     status: Optional[int] = Query(None),
+#     page: int = Query(1, ge=1),
+#     page_size: int = Query(20, ge=1, le=100),
+#     db: Session = Depends(get_db)
+# ):
+#     skip = (page - 1) * page_size
+#     data = coupon_service.get_use_logs(db, user_id, user_coupon_id, status, skip, page_size)
+#     return format_response(data=data)
+#
+#
+# @router1.get("/use-logs/{log_id}")
+# def get_use_log(log_id: str, db: Session = Depends(get_db)):
+#     data = coupon_service.get_use_log(db, log_id)
+#     if not data:
+#         return format_response(code=404, message="使用日志不存在")
+#     return format_response(data=data)
+#
+#
+# @router1.put("/use-logs/{log_id}")
+# def update_use_log(log_id: str, log_update: CouponUseLogUpdate, db: Session = Depends(get_db)):
+#     data = coupon_service.update_use_log(db, log_id, log_update)
+#     if not data:
+#         return format_response(code=404, message="使用日志不存在")
+#     return format_response(data=data, message="使用日志更新成功")
+#
+#
+# @router1.delete("/use-logs/{log_id}")
+# def delete_use_log(log_id: str, db: Session = Depends(get_db)):
+#     success = coupon_service.delete_use_log(db, log_id)
+#     if not success:
+#         return format_response(code=404, message="使用日志不存在")
+#     return format_response(message="使用日志已删除")
 
 
 # ==================== 营销活动 Activities API ====================
@@ -215,21 +214,21 @@ def delete_activity(activity_id: str, db: Session = Depends(get_db)):
 
 @router4.post("/activities/{activities_id}/goods")
 @require_roles(["admin"])
-def add_activity_goods(activities_id: str, product_id: str, db: Session = Depends(get_db)):
-    coupon_service.create_activity_goods(db, activities_id, product_id)
+def add_activity_goods(activities_id: str, goods_id: str, db: Session = Depends(get_db)):
+    coupon_service.create_activity_goods(db, activities_id, goods_id)
     return format_response(message="活动商品关联成功")
 
 
 @router4.get("/activities/{activities_id}/goods")
 def get_activity_goods(
     activities_id: str,
-    product_id: Optional[str] = Query(None),
+    goods_id: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
     skip = (page - 1) * page_size
-    data = coupon_service.get_activity_goods_list(db, activities_id, product_id, skip, page_size)
+    data = coupon_service.get_activity_goods_list(db, activities_id, goods_id, skip, page_size)
     return format_response(data=data)
 
 
@@ -237,41 +236,41 @@ def get_activity_goods(
 @require_roles(["admin"])
 def remove_activity_goods(
     activities_id: str,
-    product_id: Optional[str] = Query(None),
+    goods_id: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
-    coupon_service.delete_activity_goods(db, activities_id, product_id)
+    coupon_service.delete_activity_goods(db, activities_id, goods_id)
     return format_response(message="活动商品关联已删除")
 
 
 # ==================== 活动订单关联 Activity Orders API ====================
 
-@router5.post("/activities/{activities_id}/orders")
-@require_roles(["admin"])
-def add_activity_orders(activities_id: str, orders_id: str, db: Session = Depends(get_db)):
-    coupon_service.create_activity_orders(db, activities_id, orders_id)
-    return format_response(message="活动订单关联成功")
-
-
-@router5.get("/activities/{activities_id}/orders")
-def get_activity_orders(
-    activities_id: str,
-    orders_id: Optional[str] = Query(None),
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-    db: Session = Depends(get_db)
-):
-    skip = (page - 1) * page_size
-    data = coupon_service.get_activity_orders_list(db, activities_id, orders_id, skip, page_size)
-    return format_response(data=data)
-
-
-@router5.delete("/activities/{activities_id}/orders")
-@require_roles(["admin"])
-def remove_activity_orders(
-    activities_id: str,
-    orders_id: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
-):
-    coupon_service.delete_activity_orders(db, activities_id, orders_id)
-    return format_response(message="活动订单关联已删除")
+# @router5.post("/activities/{activities_id}/orders")
+# @require_roles(["admin"])
+# def add_activity_orders(activities_id: str, orders_id: str, db: Session = Depends(get_db)):
+#     coupon_service.create_activity_orders(db, activities_id, orders_id)
+#     return format_response(message="活动订单关联成功")
+#
+#
+# @router5.get("/activities/{activities_id}/orders")
+# def get_activity_orders(
+#     activities_id: str,
+#     orders_id: Optional[str] = Query(None),
+#     page: int = Query(1, ge=1),
+#     page_size: int = Query(20, ge=1, le=100),
+#     db: Session = Depends(get_db)
+# ):
+#     skip = (page - 1) * page_size
+#     data = coupon_service.get_activity_orders_list(db, activities_id, orders_id, skip, page_size)
+#     return format_response(data=data)
+#
+#
+# @router5.delete("/activities/{activities_id}/orders")
+# @require_roles(["admin"])
+# def remove_activity_orders(
+#     activities_id: str,
+#     orders_id: Optional[str] = Query(None),
+#     db: Session = Depends(get_db)
+# ):
+#     coupon_service.delete_activity_orders(db, activities_id, orders_id)
+#     return format_response(message="活动订单关联已删除")

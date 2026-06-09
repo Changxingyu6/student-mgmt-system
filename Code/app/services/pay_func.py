@@ -8,7 +8,7 @@ from sqlalchemy import and_
 
 
 def pay_query_func(order_id, db):
-    """查询支付记录"""
+    """查询支付记录（通过订单ID）"""
     return pay_dao.pay_query_dao(order_id, db)
 
 
@@ -63,8 +63,12 @@ def check_payment_expired(payment_data: dict, db) -> dict:
     if not expire_time:
         return {"success": False, "message": "支付记录缺少过期时间", "expired": False}
 
-    # 获取当前时间
-    current_time = datetime.now()
+    # 获取当前时间（带时区）
+    current_time = datetime.now(timezone.utc)
+
+    # 如果 expire_time 不带时区，转换为 UTC
+    if expire_time.tzinfo is None:
+        expire_time = expire_time.replace(tzinfo=timezone.utc)
 
     # 检查是否过期
     if current_time > expire_time:
@@ -89,7 +93,6 @@ def check_payment_expired(payment_data: dict, db) -> dict:
 def close_expired_payments(db) -> dict:
     """
     定时任务：批量关闭所有过期的支付记录
-
     查询所有状态为"待支付"且过期时间小于当前时间的支付记录，
     将其状态更新为"已关闭"
 
@@ -102,9 +105,9 @@ def close_expired_payments(db) -> dict:
     from model.payments_logistics import Payments
 
     try:
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
 
-        # 查询所有过期的待支付记录
+        # 查询所有过期的待支付记录，过期时间小于当前时间说明过期（超过30分钟）
         expired_payments = db.query(Payments).filter(
             and_(
                 Payments.pay_status == "待支付",

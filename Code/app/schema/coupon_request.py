@@ -99,39 +99,39 @@ class UserCouponQuery(BaseModel):
     page_size: int = 20
 
 #优惠券使用日志
-class CouponUseLogBase(BaseModel):
-    user_coupon_id: str
-    user_id: str
-    status: int = Field(0, ge=0, le=1, description="0使用失败,1使用成功")
-    order_id: Optional[str] = None
-    remark: Optional[str] = None
-
-
-class CouponUseLogCreate(CouponUseLogBase):
-    pass
-
-
-class CouponUseLogUpdate(BaseModel):
-    status: Optional[int] = Field(None, ge=0, le=1)
-    remark: Optional[str] = None
-
-
-class CouponUseLogOut(CouponUseLogBase):
-    id: str
-    is_deleted: int
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-
-class CouponUseLogQuery(BaseModel):
-    user_id: Optional[str] = None
-    user_coupon_id: Optional[str] = None
-    status: Optional[int] = None
-    page: int = 1
-    page_size: int = 20
+# class CouponUseLogBase(BaseModel):
+#     user_coupon_id: str
+#     user_id: str
+#     status: int = Field(0, ge=0, le=1, description="0使用失败,1使用成功")
+#     order_id: Optional[str] = None
+#     remark: Optional[str] = None
+#
+#
+# class CouponUseLogCreate(CouponUseLogBase):
+#     pass
+#
+#
+# class CouponUseLogUpdate(BaseModel):
+#     status: Optional[int] = Field(None, ge=0, le=1)
+#     remark: Optional[str] = None
+#
+#
+# class CouponUseLogOut(CouponUseLogBase):
+#     id: str
+#     is_deleted: int
+#     created_at: Optional[datetime] = None
+#     updated_at: Optional[datetime] = None
+#
+#     class Config:
+#         from_attributes = True
+#
+#
+# class CouponUseLogQuery(BaseModel):
+#     user_id: Optional[str] = None
+#     user_coupon_id: Optional[str] = None
+#     status: Optional[int] = None
+#     page: int = 1
+#     page_size: int = 20
 
 #营销活动
 class ActivitiesBase(BaseModel):
@@ -181,33 +181,33 @@ class ActivitiesQuery(BaseModel):
 #活动商品关联
 class ActivityGoodsCreate(BaseModel):
     activities_id: str
-    product_id: str
+    goods_id: str
 
 
 class ActivityGoodsDelete(BaseModel):
     activities_id: str
-    product_id: Optional[str] = None
+    goods_id: Optional[str] = None
 
 
 class ActivityGoodsQuery(BaseModel):
     activities_id: Optional[str] = None
-    product_id: Optional[str] = None
+    goods_id: Optional[str] = None
     page: int = 1
     page_size: int = 20
 
-#活动订单关联
-class ActivityOrdersCreate(BaseModel):
-    activities_id: str
-    orders_id: str
-
-
-class ActivityOrdersDelete(BaseModel):
-    activities_id: str
-    orders_id: Optional[str] = None
-
-
-class ActivityOrdersQuery(BaseModel):
-    activities_id: Optional[str] = None
-    orders_id: Optional[str] = None
-    page: int = 1
-    page_size: int = 20
+# #活动订单关联
+# class ActivityOrdersCreate(BaseModel):
+#     activities_id: str
+#     orders_id: str
+#
+#
+# class ActivityOrdersDelete(BaseModel):
+#     activities_id: str
+#     orders_id: Optional[str] = None
+#
+#
+# class ActivityOrdersQuery(BaseModel):
+#     activities_id: Optional[str] = None
+#     orders_id: Optional[str] = None
+#     page: int = 1
+#     page_size: int = 20
