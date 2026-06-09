@@ -30,6 +30,16 @@ app = FastAPI(
 )
 
 
+# ===== CORS 跨域 ===== (必须在认证中间件之前注册)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
     """
@@ -38,15 +48,17 @@ async def auth_middleware(request: Request, call_next):
     """
     start_time = time.time()
     
-    # 1. 检查是否在白名单中（前缀匹配）
+    # 1. 检查是否是 OPTIONS 请求（CORS预检请求），直接放行
+    if request.method == "OPTIONS":
+        response = await call_next(request)
+        return response
+    
+    # 2. 检查是否在白名单中（前缀匹配）
     if any(request.url.path.startswith(path) for path in WHITELIST):
         response = await call_next(request)
         return response
 
-    response = await call_next(request)
-    return response
-
-    # 2. 获取 Token
+    # 3. 获取 Token
     token = None
     if "Authorization" in request.headers:
         auth_header = request.headers["Authorization"]
@@ -85,16 +97,6 @@ async def auth_middleware(request: Request, call_next):
     # 4. 继续处理请求
     response = await call_next(request)
     return response
-
-
-# ===== CORS 跨域 =====
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 # ===== 注册路由 =====

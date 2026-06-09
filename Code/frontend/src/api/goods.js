@@ -81,10 +81,10 @@ export function deleteGoods(goodsId) {
 }
 
 // ============ 库存 ============
-// 调整库存
-export function adjustStock(goodsId, delta) {
+// 调整库存（按规格）
+export function adjustStock(specId, delta) {
   return request({
-    url: `/goods/${goodsId}/stock`,
+    url: `/goods/spec/${specId}/stock`,
     method: 'put',
     params: { delta }
   })
