@@ -18,7 +18,11 @@ WHITELIST = [
     "/docs",
     "/redoc",
     "/openapi.json",
-    "/data-analysis/users/weekly"
+    "/data-analysis/users/weekly",
+    "/pay_api",
+    "/refund_api",
+    "/logistics_api",
+    "/return_logistics_api"
 ]
 
 
@@ -112,6 +116,12 @@ app.include_router(usercoupon_api_router)
 app.include_router(activity_api_router)
 app.include_router(activitygoods_api_router)
 app.include_router(activityorders_api_router)
+
+# ===== 定时任务配置 =====
+from utils.scheduler_utils import init_scheduler
+
+# 初始化定时任务
+scheduler = init_scheduler()
 
 if __name__ == "__main__":
     import uvicorn

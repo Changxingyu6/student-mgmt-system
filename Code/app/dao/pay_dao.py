@@ -5,7 +5,7 @@ from utils import generate_uuid
 from datetime import datetime,timedelta
 import uuid
 from utils import logger
-# 查询数据
+# 查询数据（通过订单ID）
 def pay_query_dao(order_id, db: Session):
     data = db.query(Payments).filter(
         Payments.order_id == order_id,
@@ -58,9 +58,9 @@ def pay_update_dao(orderdata: dict, db: Session):
         return False
 
 # 删除数据
-def pay_delete_dao(order_id, db: Session):
+def pay_delete_dao(pay_id, db: Session):
     data = db.query(Payments).filter(
-        Payments.order_id == order_id,
+        Payments.pay_id == pay_id,
         Payments.is_deleted == "0"
     ).first()
     if data:
