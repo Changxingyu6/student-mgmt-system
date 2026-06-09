@@ -8,12 +8,18 @@ from .log_api import router as log_api_router
 from .ai_api import router as ai_api_router
 from .data_analysis_api import router as data_router
 from .shopping_cart_api import router as shopping_cart
-from .coupon_api import router as coupon_api_router
 from .goods_api import goods_router
 from .pay_api import router as pay_api_router
 from .refund_api import router as refund_api_router
 from .logistics_api import router as logistics_api_router
 from .return_logistics_api import router as return_logistics_api_router
+from .coupon_api import router1 as coupon_api_router
+from .coupon_api import router2 as usercoupon_api_router
+from .coupon_api import router3 as activity_api_router
+from .coupon_api import router4 as activitygoods_api_router
+from .coupon_api import router5 as activityorders_api_router
+from .order_api import router as order_api_router
+
 
 
 # 统一导出所有路由
@@ -28,6 +34,12 @@ __all__ = [
     "pay_api_router",
     "refund_api_router",
     "logistics_api_router",
-    "return_logistics_api_router"
+    "return_logistics_api_router",
+    "coupon_api_router",
+    "usercoupon_api_router",
+    "activity_api_router",
+    "activitygoods_api_router",
+    "activityorders_api_router",
+    "order_api_router"
 ]
 
