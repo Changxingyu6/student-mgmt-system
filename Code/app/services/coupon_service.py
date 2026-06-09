@@ -3,7 +3,8 @@ from uuid import uuid4
 from typing import Optional
 from schema.coupon_request import (
     CouponCreate, CouponUpdate, UserCouponCreate, UserCouponUpdate,
-    CouponUseLogCreate, CouponUseLogUpdate, ActivitiesCreate, ActivitiesUpdate
+    # CouponUseLogCreate, CouponUseLogUpdate,
+    ActivitiesCreate, ActivitiesUpdate
 )
 from dao import coupon_dao
 
@@ -84,34 +85,34 @@ def delete_user_coupon(db: Session, uc_id: str) -> bool:
 
 # ==================== CouponUseLog Service ====================
 
-def get_use_log(db: Session, log_id: str):
-    return coupon_dao.get_use_log_by_id(db, log_id)
-
-
-def get_use_logs(
-    db: Session,
-    user_id: Optional[str] = None,
-    user_coupon_id: Optional[str] = None,
-    status: Optional[int] = None,
-    skip: int = 0,
-    limit: int = 20
-) -> dict:
-    filters = {"user_id": user_id, "user_coupon_id": user_coupon_id, "status": status}
-    items, total = coupon_dao.get_use_log_list(db, filters, skip, limit)
-    return {"total": total, "items": items}
-
-
-def create_use_log(db: Session, log: CouponUseLogCreate):
-    return coupon_dao.create_use_log(db, log.model_dump())
-
-
-def update_use_log(db: Session, log_id: str, log_update: CouponUseLogUpdate):
-    update_data = log_update.model_dump(exclude_unset=True)
-    return coupon_dao.update_use_log(db, log_id, update_data)
-
-
-def delete_use_log(db: Session, log_id: str) -> bool:
-    return coupon_dao.delete_use_log(db, log_id)
+# def get_use_log(db: Session, log_id: str):
+#     return coupon_dao.get_use_log_by_id(db, log_id)
+#
+#
+# def get_use_logs(
+#     db: Session,
+#     user_id: Optional[str] = None,
+#     user_coupon_id: Optional[str] = None,
+#     status: Optional[int] = None,
+#     skip: int = 0,
+#     limit: int = 20
+# ) -> dict:
+#     filters = {"user_id": user_id, "user_coupon_id": user_coupon_id, "status": status}
+#     items, total = coupon_dao.get_use_log_list(db, filters, skip, limit)
+#     return {"total": total, "items": items}
+#
+#
+# def create_use_log(db: Session, log: CouponUseLogCreate):
+#     return coupon_dao.create_use_log(db, log.model_dump())
+#
+#
+# def update_use_log(db: Session, log_id: str, log_update: CouponUseLogUpdate):
+#     update_data = log_update.model_dump(exclude_unset=True)
+#     return coupon_dao.update_use_log(db, log_id, update_data)
+#
+#
+# def delete_use_log(db: Session, log_id: str) -> bool:
+#     return coupon_dao.delete_use_log(db, log_id)
 
 
 # ==================== Activities Service ====================
@@ -184,40 +185,40 @@ def delete_activity(db: Session, activity_id: str) -> bool:
 def get_activity_goods_list(
     db: Session,
     activities_id: Optional[str] = None,
-    product_id: Optional[str] = None,
+    goods_id: Optional[str] = None,
     skip: int = 0,
     limit: int = 20
 ) -> dict:
-    total, items = coupon_dao.get_activity_goods_list(db, activities_id, product_id, skip, limit)
+    total, items = coupon_dao.get_activity_goods_list(db, activities_id, goods_id, skip, limit)
     return {"total": total, "items": [dict(row._mapping) for row in items]}
 
 
-def create_activity_goods(db: Session, activities_id: str, product_id: str):
-    return coupon_dao.create_activity_goods(db, activities_id, product_id)
+def create_activity_goods(db: Session, activities_id: str, goods_id: str):
+    return coupon_dao.create_activity_goods(db, activities_id, goods_id)
 
 
-def delete_activity_goods(db: Session, activities_id: str, product_id: Optional[str] = None) -> bool:
-    coupon_dao.soft_delete_activity_goods(db, activities_id, product_id)
+def delete_activity_goods(db: Session, activities_id: str, goods_id: Optional[str] = None) -> bool:
+    coupon_dao.soft_delete_activity_goods(db, activities_id, goods_id)
     return True
 
 
 # ==================== Activity Orders Service ====================
 
-def get_activity_orders_list(
-    db: Session,
-    activities_id: Optional[str] = None,
-    orders_id: Optional[str] = None,
-    skip: int = 0,
-    limit: int = 20
-) -> dict:
-    total, items = coupon_dao.get_activity_orders_list(db, activities_id, orders_id, skip, limit)
-    return {"total": total, "items": [dict(row._mapping) for row in items]}
-
-
-def create_activity_orders(db: Session, activities_id: str, orders_id: str):
-    return coupon_dao.create_activity_orders(db, activities_id, orders_id)
-
-
-def delete_activity_orders(db: Session, activities_id: str, orders_id: Optional[str] = None) -> bool:
-    coupon_dao.soft_delete_activity_orders(db, activities_id, orders_id)
-    return True
+# def get_activity_orders_list(
+#     db: Session,
+#     activities_id: Optional[str] = None,
+#     orders_id: Optional[str] = None,
+#     skip: int = 0,
+#     limit: int = 20
+# ) -> dict:
+#     total, items = coupon_dao.get_activity_orders_list(db, activities_id, orders_id, skip, limit)
+#     return {"total": total, "items": [dict(row._mapping) for row in items]}
+#
+#
+# def create_activity_orders(db: Session, activities_id: str, orders_id: str):
+#     return coupon_dao.create_activity_orders(db, activities_id, orders_id)
+#
+#
+# def delete_activity_orders(db: Session, activities_id: str, orders_id: Optional[str] = None) -> bool:
+#     coupon_dao.soft_delete_activity_orders(db, activities_id, orders_id)
+#     return True
