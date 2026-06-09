@@ -102,6 +102,7 @@ app.include_router(log_api_router)
 app.include_router(ai_api_router)
 app.include_router(data_router)
 app.include_router(shopping_cart)
+app.include_router(coupon_api_router)
 app.include_router(goods_router)
 
 if __name__ == "__main__":
