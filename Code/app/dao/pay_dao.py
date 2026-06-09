@@ -48,6 +48,9 @@ def pay_update_dao(orderdata: dict, db: Session):
         if not order:
             return False
         for key, value in orderdata.items():
+            # 跳过 None 值，只更新传入的字段
+            if value is None:
+                continue
             if hasattr(order, key):
                 setattr(order, key, value)
         db.commit()

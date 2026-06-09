@@ -75,4 +75,4 @@ class Activities(Base):
     is_deleted = Column(Integer, default=0, comment='0正常,1删除')
 
 
-Base.metadata.create_all(engine)
+# Base.metadata.create_all(engine)

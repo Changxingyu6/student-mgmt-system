@@ -186,10 +186,18 @@ def process_payment(pay_id: str, user_id: str, pay_password: str, db) -> dict:
         }
 
     # 4. 更新支付状态为支付成功
-    pay_dao.pay_update_dao({
+    update_result = pay_dao.pay_update_dao({
         "pay_id": pay_id,
-        "pay_status": "支付成功"
+        "pay_status": "支付成功",
+        "pay_time": datetime.now()  # 记录支付时间
     }, db)
+    if not update_result:
+        return {
+            "success": False,
+            "message": "支付状态更新失败",
+            "data": None
+        }
+    
     # 5. 自动生成物流信息
     logistics_dao.logistics_insert_dao({
         "order_id": payment_data.get("order_id"),  # 使用支付记录中的订单ID
