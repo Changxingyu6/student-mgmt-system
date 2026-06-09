@@ -187,7 +187,6 @@ def process_payment(pay_id: str, user_id: str, pay_password: str, db) -> dict:
         "pay_id": pay_id,
         "pay_status": "支付成功"
     }, db)
-
     # 5. 自动生成物流信息
     logistics_dao.logistics_insert_dao({
         "order_id": payment_data.get("order_id"),  # 使用支付记录中的订单ID

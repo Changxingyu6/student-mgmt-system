@@ -8,7 +8,8 @@ class Payments(Base):
     __tablename__ = 'payments'
     pay_id = Column(String(50), primary_key=True, comment="支付单ID")
     pay_no = Column(String(64), unique=True, nullable=False, comment="支付流水号")
-    order_id = Column(String(50),ForeignKey("orders.id",ondelete="CASCADE"),nullable=False,comment="订单ID")
+    # order_id = Column(String(50),ForeignKey("orders.id",ondelete="CASCADE"),nullable=False,comment="订单ID")
+    order_id = Column(String(50),nullable=False,comment="订单ID")
     user_id = Column(String(50), nullable=False, comment="用户ID")
     # 枚举直接建在表里
     pay_status = Column(
@@ -37,7 +38,8 @@ class Refund(Base):
     __tablename__ = "refund"
     refund_id = Column(String(50), primary_key=True)
     refund_no = Column(String(64), unique=True, nullable=False)
-    after_sales_id = Column(String(36),ForeignKey("after_sales.id",ondelete="CASCADE"),nullable=False,comment="售后订单ID")
+    # after_sales_id = Column(String(36),ForeignKey("after_sales.id",ondelete="CASCADE"),nullable=False,comment="售后订单ID")
+    after_sales_id = Column(String(36),nullable=False,comment="售后订单ID")
     refund_status = Column(
         ENUM("待退款", "退款中", "退款成功", "退款失败"),
         default="待退款", nullable=False
@@ -57,7 +59,8 @@ class Logistics(Base):
     # 物流表
     __tablename__ = "logistics"
     logistics_id = Column(String(50), primary_key=True)
-    order_id = Column(String(50),ForeignKey("orders.id",ondelete="CASCADE"),nullable=False,comment="订单ID")
+    # order_id = Column(String(50),ForeignKey("orders.id",ondelete="CASCADE"),nullable=False,comment="订单ID")
+    order_id = Column(String(50),nullable=False,comment="订单ID")
     logistics_no = Column(String(64), unique=True, nullable=False)
     logistics_status = Column(
         ENUM("待发货", "已揽收", "运输中", "派送中", "已签收", "异常"),
@@ -77,7 +80,8 @@ class Return_Logistics(Base):
     # 退货物流表
     __tablename__ = "return_logistics"
     return_logistics_id = Column(String(50), primary_key=True)
-    after_sales_id = Column(String(36),ForeignKey("after_sales.id",ondelete="CASCADE"),nullable=False,comment="售后订单ID")
+    # after_sales_id = Column(String(36),ForeignKey("after_sales.id",ondelete="CASCADE"),nullable=False,comment="售后订单ID")
+    after_sales_id = Column(String(36),nullable=False,comment="售后订单ID")
     return_logistics_no = Column(String(64), unique=True, nullable=False)
     return_logistics_status = Column(
         ENUM("待发货", "已揽收", "运输中", "派送中", "已签收", "异常"),
