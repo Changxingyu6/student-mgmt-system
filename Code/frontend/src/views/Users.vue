@@ -23,6 +23,14 @@
       <el-table :data="tableData" border style="width: 100%">
         <el-table-column prop="username" label="用户名" width="150" />
         <el-table-column prop="nickname" label="昵称" width="150" />
+        <el-table-column label="角色" width="100">
+          <template #default="{ row }">
+            <el-tag v-if="row.role" :type="getRoleTagType(row.role)">
+              {{ getRoleLabel(row.role) }}
+            </el-tag>
+            <el-tag v-else type="info">未分配</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="user_level" label="等级" width="120">
           <template #default="{ row }">
             <el-tag :type="getLevelTagType(row.user_level)">
@@ -46,10 +54,13 @@
             {{ formatDate(row.create_time) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="280" fixed="right">
+        <el-table-column label="操作" width="320" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="showEditDialog(row)">
               编辑
+            </el-button>
+            <el-button type="warning" size="small" @click="showRoleDialog(row)">
+              角色
             </el-button>
             <el-button v-if="row.is_locked" type="success" size="small" @click="handleUnlock(row)">
               解锁
@@ -127,6 +138,37 @@
         <el-button type="primary" @click="handleRecharge">确认充值</el-button>
       </template>
     </el-dialog>
+
+    <!-- 修改角色弹窗 -->
+    <el-dialog v-model="showRoleDialogVisible" title="修改角色" width="400px">
+      <el-form :model="roleForm" label-width="80px">
+        <el-form-item label="用户名">
+          <el-input v-model="roleForm.username" disabled />
+        </el-form-item>
+        <el-form-item label="当前角色">
+          <el-tag v-if="roleForm.currentRole" :type="getRoleTagType(roleForm.currentRole)">
+            {{ getRoleLabel(roleForm.currentRole) }}
+          </el-tag>
+          <el-tag v-else type="info">未分配</el-tag>
+        </el-form-item>
+        <el-form-item label="新角色">
+          <el-select v-model="roleForm.roleId" placeholder="请选择角色" style="width: 100%">
+            <el-option label="系统管理员" value="r-001">
+              <span style="float: left">系统管理员</span>
+              <span style="float: right; color: #8492a6; font-size: 12px">admin</span>
+            </el-option>
+            <el-option label="普通用户" value="r-002">
+              <span style="float: left">普通用户</span>
+              <span style="float: right; color: #8492a6; font-size: 12px">user</span>
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showRoleDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleChangeRole">确认修改</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -134,11 +176,12 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { getUsers, unlockUser, createUser, updateUser, deleteUser, rechargeBalance } from '@/api/user'
+import { getUsers, unlockUser, createUser, updateUser, deleteUser, rechargeBalance, updateUserRole } from '@/api/user'
 
 const tableData = ref([])
 const showUserDialog = ref(false)
 const showRecharge = ref(false)
+const showRoleDialogVisible = ref(false)
 const isEdit = ref(false)
 const currentUserId = ref('')
 const statusFilter = ref('')
@@ -164,6 +207,12 @@ const rechargeForm = reactive({
   reason: ''
 })
 
+const roleForm = reactive({
+  username: '',
+  currentRole: '',
+  roleId: ''
+})
+
 const getLevelTagType = (level) => {
   const typeMap = {
     '青铜会员': 'info',
@@ -171,6 +220,22 @@ const getLevelTagType = (level) => {
     '黄金会员': 'warning'
   }
   return typeMap[level] || 'info'
+}
+
+const getRoleTagType = (roleName) => {
+  const typeMap = {
+    'admin': 'danger',
+    'user': 'primary'
+  }
+  return typeMap[roleName] || 'info'
+}
+
+const getRoleLabel = (roleName) => {
+  const labelMap = {
+    'admin': '管理员',
+    'user': '普通用户'
+  }
+  return labelMap[roleName] || roleName
 }
 
 const formatDate = (date) => {
@@ -273,6 +338,35 @@ const handleRecharge = async () => {
     await rechargeBalance(currentUserId.value, rechargeForm)
     ElMessage.success('充值成功')
     showRecharge.value = false
+    loadUsers()
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const ROLE_MAP = {
+  'admin': 'r-001',
+  'user': 'r-002'
+}
+
+const showRoleDialog = (row) => {
+  currentUserId.value = row.id
+  roleForm.username = row.username
+  roleForm.currentRole = row.role || ''
+  // role 现在是字符串（admin/user），需要通过映射转为 role_id
+  roleForm.roleId = ROLE_MAP[row.role] || ''
+  showRoleDialogVisible.value = true
+}
+
+const handleChangeRole = async () => {
+  if (!roleForm.roleId) {
+    ElMessage.warning('请选择角色')
+    return
+  }
+  try {
+    await updateUserRole(currentUserId.value, { role_id: roleForm.roleId })
+    ElMessage.success('角色修改成功')
+    showRoleDialogVisible.value = false
     loadUsers()
   } catch (error) {
     console.error(error)
