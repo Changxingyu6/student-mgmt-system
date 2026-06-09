@@ -5,6 +5,7 @@ from datetime import datetime
 
 
 # ========== 商品分类 ==========
+
 class CategoryBase(BaseModel):
     category_name: str = Field(..., min_length=1, max_length=50, description="分类名称")
     parent_id: str = "0"
@@ -14,7 +15,11 @@ class CategoryBase(BaseModel):
 
 
 class CategoryCreate(CategoryBase):
-    pass
+    category_name: str = Field(..., min_length=1, max_length=50, description="分类名称")
+    parent_id: str = "0"
+    sort_order: int = 0
+    icon: Optional[str] = None
+    status: int = 1
 
 
 class CategoryUpdate(BaseModel):
@@ -40,15 +45,20 @@ class SpecBase(BaseModel):
 
 
 class SpecCreate(SpecBase):
-    pass
+    spec_name: str = Field(..., max_length=50)
+    spec_value: str = Field(..., max_length=100)
+    sort_order: int = 0
+    stock_num: int = 0  # 该规格的初始库存
 
 
 class SpecResponse(SpecBase):
     id: str
+    stock: Optional['StockResponse'] = None  # 关联库存
 
 
 # ========== 商品库存 ==========
 class StockBase(BaseModel):
+    spec_id: Optional[str] = None  # 关联规格ID
     stock_num: int = 0
     lock_stock: int = 0
 
@@ -60,7 +70,7 @@ class StockUpdate(BaseModel):
 
 class StockResponse(StockBase):
     id: str
-    goods_id: str
+    spec_id: str
     update_time: datetime
 
 
@@ -82,8 +92,7 @@ class GoodsBase(BaseModel):
 
 class GoodsCreate(GoodsBase):
     goods_no: str = Field(..., max_length=50)
-    specs: List[SpecCreate] = []
-    stock: StockBase = StockBase()
+    specs: List[SpecCreate] = []  # 每个规格包含库存信息
 
 
 class GoodsUpdate(BaseModel):
@@ -107,8 +116,7 @@ class GoodsResponse(GoodsBase):
     create_time: datetime
     update_time: datetime
     category_name: Optional[str] = None  # 冗余字段方便展示
-    specs: List[SpecResponse] = []
-    stock: Optional[StockResponse] = None
+    specs: List[SpecResponse] = []  # 规格列表（包含库存）
 
     class Config:
         from_attributes = True

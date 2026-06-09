@@ -4,6 +4,7 @@ from model.goods_model import Goods, GoodsCategory, GoodsSpec, GoodsStock
 
 
 # ========== 商品分类 DAO ==========
+#根据分类id查询
 def get_category_by_id(db: Session, category_id: str):
     return db.query(GoodsCategory).filter(GoodsCategory.id == category_id).first()
 
@@ -91,6 +92,17 @@ def get_specs_by_goods_id(db: Session, goods_id: str):
     return db.query(GoodsSpec).filter(GoodsSpec.goods_id == goods_id).all()
 
 
+def get_spec_by_id(db: Session, spec_id: str):
+    return db.query(GoodsSpec).filter(GoodsSpec.id == spec_id).first()
+
+
+def create_spec(db: Session, spec: GoodsSpec):
+    db.add(spec)
+    db.commit()
+    db.refresh(spec)
+    return spec
+
+
 def create_specs_batch(db: Session, specs: list):
     db.add_all(specs)
     db.commit()
@@ -104,7 +116,13 @@ def delete_specs_by_goods_id(db: Session, goods_id: str):
 
 # ========== 商品库存 DAO ==========
 def get_stock_by_goods_id(db: Session, goods_id: str):
-    return db.query(GoodsStock).filter(GoodsStock.goods_id == goods_id).first()
+    """通过商品ID查询库存（查询该商品所有规格的库存）"""
+    return db.query(GoodsStock).join(GoodsSpec).filter(GoodsSpec.goods_id == goods_id).all()
+
+
+def get_stock_by_spec_id(db: Session, spec_id: str):
+    """通过规格ID查询库存"""
+    return db.query(GoodsStock).filter(GoodsStock.spec_id == spec_id).first()
 
 
 def create_stock(db: Session, stock: GoodsStock):
@@ -122,7 +140,7 @@ def update_stock(db: Session, stock: GoodsStock, stock_num: int):
 
 
 def deduct_stock(db: Session, goods_id: str, quantity: int):
-    """扣减库存（用于下单）"""
+    """扣减库存（用于下单）- 旧版，保留兼容"""
     stock = get_stock_by_goods_id(db, goods_id)
     if not stock:
         raise ValueError("库存记录不存在")
@@ -131,3 +149,13 @@ def deduct_stock(db: Session, goods_id: str, quantity: int):
     stock.stock_num -= quantity
     db.commit()
     return stock
+
+
+def get_low_stock_goods(db: Session, custom_threshold: int = None):
+    """获取库存预警商品列表"""
+    query = db.query(GoodsStock, GoodsSpec, Goods).join(GoodsSpec).join(Goods)
+    if custom_threshold is not None:
+        query = query.filter(GoodsStock.stock_num <= custom_threshold)
+    else:
+        query = query.filter(GoodsStock.stock_num <= GoodsStock.warning_stock)
+    return query.all()
