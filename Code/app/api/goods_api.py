@@ -44,6 +44,8 @@ def list_categories(skip: int = 0, limit: int = 30, db: Session = Depends(get_db
     return dao.get_all_categories(db, skip, limit)
 
 
+
+
 # ========== 商品接口 ==========
 #添加商品
 @goods_router.post("/", response_model=GoodsResponse, summary="新增商品")
@@ -113,15 +115,16 @@ def list_goods(
     }
 
 
-#修改库存
-@goods_router.put("/{goods_id}/stock", summary="手动调整库存")
-def adjust_stock(
-        goods_id: str,
+# ========== 库存接口 ==========
+#修改库存（按规格）
+@goods_router.put("/spec/{spec_id}/stock", summary="手动调整规格库存")
+def adjust_spec_stock(
+        spec_id: str,
         delta: int = Query(..., description="调整数量，正数增加，负数减少"),
         db: Session = Depends(get_db)
 ):
     try:
-        service.update_stock(db, goods_id, delta)
+        service.update_stock(db, spec_id, delta)
         return {"message": "库存调整成功"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -130,15 +133,18 @@ def adjust_stock(
 @goods_router.get("/stock/low", summary="库存预警列表")
 def low_stock_list(custom_threshold: Optional[int] = Query(None), db: Session = Depends(get_db)):
     result = service.get_low_stock_list(db, custom_threshold)
-    # 格式化返回数据
+    # 格式化返回数据（库存关联到规格）
     items = []
-    for stock, goods in result:
+    for stock, spec, goods in result:
         items.append({
             "goods_id": goods.id,
             "goods_name": goods.goods_name,
             "goods_no": goods.goods_no,
+            "spec_id": spec.id,
+            "spec_name": spec.spec_name,
+            "spec_value": spec.spec_value,
             "stock_num": stock.stock_num,
-            "warning_threshold": goods.stock_warning
+            "warning_threshold": stock.warning_stock
         })
     return {"items": items, "total": len(items)}
 
