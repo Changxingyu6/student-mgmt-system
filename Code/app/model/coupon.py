@@ -1,13 +1,14 @@
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy import Column, Integer, String, DECIMAL, ForeignKey, Table, VARCHAR, DateTime, func
 
+
 Base = declarative_base()
 
 activities_goods = Table(
-    'activities_product',
+    'activities_goods',
     Base.metadata,
     Column('activities_id', VARCHAR(50), ForeignKey('activities.id'), primary_key=True),
-    Column('product_id', VARCHAR(50), ForeignKey('product.id'), primary_key=True),
+    Column('goods_id', VARCHAR(50), ForeignKey('goods.id'), primary_key=True),
     Column('is_deleted', Integer, default=0, index=True, comment='0正常,1删除')
 )
 
@@ -84,5 +85,6 @@ class Activities(Base):
     is_deleted = Column(Integer, default=0, comment='0正常,1删除')
     created_at = Column(DateTime, server_default=func.now(), comment='创建时间')
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), comment='更新时间')
-    goods = relationship("Product", secondary=activities_goods, backref="activities")
+    goods = relationship("Goods", secondary=activities_goods, backref="activities")
     orders = relationship("Orders", secondary=activities_orders, backref="activities")
+

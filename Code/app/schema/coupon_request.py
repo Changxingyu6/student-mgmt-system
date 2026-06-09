@@ -10,7 +10,7 @@ class ResponseModel(BaseModel):
     msg: str = "success"
     data: Optional[Any] = None
 
-
+#优惠券
 class CouponBase(BaseModel):
     coupons_no: str
     coupons_name: str
@@ -60,7 +60,7 @@ class CouponQuery(BaseModel):
     page: int = Field(1, ge=1)
     page_size: int = Field(20, ge=1, le=100)
 
-
+#用户优惠券
 class UserCouponBase(BaseModel):
     coupon_id: str
     user_id: str
@@ -98,7 +98,7 @@ class UserCouponQuery(BaseModel):
     page: int = 1
     page_size: int = 20
 
-
+#优惠券使用日志
 class CouponUseLogBase(BaseModel):
     user_coupon_id: str
     user_id: str
@@ -133,7 +133,7 @@ class CouponUseLogQuery(BaseModel):
     page: int = 1
     page_size: int = 20
 
-
+#营销活动
 class ActivitiesBase(BaseModel):
     activities_name: str
     activities_type: str = Field(..., pattern="^(1|2)$", description="1满减,2折扣")
@@ -178,7 +178,7 @@ class ActivitiesQuery(BaseModel):
     page: int = 1
     page_size: int = 20
 
-
+#活动商品关联
 class ActivityGoodsCreate(BaseModel):
     activities_id: str
     product_id: str
@@ -195,7 +195,7 @@ class ActivityGoodsQuery(BaseModel):
     page: int = 1
     page_size: int = 20
 
-
+#活动订单关联
 class ActivityOrdersCreate(BaseModel):
     activities_id: str
     orders_id: str

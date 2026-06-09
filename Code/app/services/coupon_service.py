@@ -5,7 +5,7 @@ from schema.coupon_request import (
     CouponCreate, CouponUpdate, UserCouponCreate, UserCouponUpdate,
     CouponUseLogCreate, CouponUseLogUpdate, ActivitiesCreate, ActivitiesUpdate
 )
-from dao import coupon as coupon_dao
+from dao import coupon_dao
 
 
 def generate_id() -> str:

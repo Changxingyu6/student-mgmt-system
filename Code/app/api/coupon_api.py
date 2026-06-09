@@ -11,7 +11,7 @@ from schema.coupon_request import (
     ActivityGoodsCreate, ActivityGoodsQuery,
     ActivityOrdersCreate, ActivityOrdersQuery
 )
-from services import coupon as coupon_service
+from services import coupon_service
 
 router = APIRouter(prefix="/coupons", tags=["营销活动管理"])
 
@@ -63,7 +63,7 @@ def delete_coupon(coupon_id: str, db: Session = Depends(get_db)):
     success = coupon_service.delete_coupon(db, coupon_id)
     if not success:
         return format_response(code=404, message="优惠券不存在")
-    return format_response(message="优惠券已下架（软删除）")
+    return format_response(message="优惠券已下架")
 
 
 # ==================== 用户优惠券 UserCoupon API ====================
@@ -109,7 +109,7 @@ def delete_user_coupon(uc_id: str, db: Session = Depends(get_db)):
     success = coupon_service.delete_user_coupon(db, uc_id)
     if not success:
         return format_response(code=404, message="用户优惠券不存在")
-    return format_response(message="用户优惠券已删除（软删除）")
+    return format_response(message="用户优惠券已删除")
 
 
 # ==================== 优惠券使用日志 CouponUseLog API ====================
@@ -155,7 +155,7 @@ def delete_use_log(log_id: str, db: Session = Depends(get_db)):
     success = coupon_service.delete_use_log(db, log_id)
     if not success:
         return format_response(code=404, message="使用日志不存在")
-    return format_response(message="使用日志已删除（软删除）")
+    return format_response(message="使用日志已删除")
 
 
 # ==================== 营销活动 Activities API ====================
@@ -204,7 +204,7 @@ def delete_activity(activity_id: str, db: Session = Depends(get_db)):
     success = coupon_service.delete_activity(db, activity_id)
     if not success:
         return format_response(code=404, message="营销活动不存在")
-    return format_response(message="营销活动已删除（软删除）")
+    return format_response(message="营销活动已删除")
 
 
 # ==================== 活动商品关联 Activity Goods API ====================
@@ -237,7 +237,7 @@ def remove_activity_goods(
     db: Session = Depends(get_db)
 ):
     coupon_service.delete_activity_goods(db, activities_id, product_id)
-    return format_response(message="活动商品关联已删除（软删除）")
+    return format_response(message="活动商品关联已删除")
 
 
 # ==================== 活动订单关联 Activity Orders API ====================
@@ -270,4 +270,4 @@ def remove_activity_orders(
     db: Session = Depends(get_db)
 ):
     coupon_service.delete_activity_orders(db, activities_id, orders_id)
-    return format_response(message="活动订单关联已删除（软删除）")
+    return format_response(message="活动订单关联已删除")
