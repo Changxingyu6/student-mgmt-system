@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from fastapi import HTTPException
 from api import (user_api_router, role_api_router, address_api_router, log_api_router, ai_api_router, data_router, shopping_cart,goods_router,
-                 pay_api_router,logistics_api_router,refund_api_router,return_logistics_api_router,coupon_api_router,usercoupon_api_router,activity_api_router,activitygoods_api_router,activityorders_api_router,order_api_router)
+                 pay_api_router,logistics_api_router,refund_api_router,return_logistics_api_router,coupon_api_router,usercoupon_api_router,activity_api_router,activitygoods_api_router,activityorders_api_router)
 from utils.jwt_utils import decode_access_token
 from utils.logger import get_logger
 
@@ -112,7 +112,6 @@ app.include_router(usercoupon_api_router)
 app.include_router(activity_api_router)
 app.include_router(activitygoods_api_router)
 app.include_router(activityorders_api_router)
-app.include_router(order_api_router)
 
 if __name__ == "__main__":
     import uvicorn
