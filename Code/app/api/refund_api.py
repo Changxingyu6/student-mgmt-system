@@ -3,6 +3,7 @@ from database import get_db
 from schema import UUIDStr
 from services import refund_func
 from schema import refund_request
+from utils import format_response
 
 router = APIRouter(
     prefix="/refund_api",
@@ -13,30 +14,21 @@ def refund_query_api(refund_id: UUIDStr, db=Depends(get_db)):
     result = refund_func.refund_query_func(refund_id, db)
     if not result:
         raise HTTPException(404, 'Not Found')
-    return result
+    return format_response(data=result, message="获取退款记录成功")
 
 @router.post('/refund')
 def refund_insert_api(refunddata: refund_request.RefundRequest, db=Depends(get_db)):
     result = refund_func.refund_insert_func(refunddata, db)
     if result:
-        return {
-            'status': 'success',
-            'refund_status': '提交退款申请成功'
-        }
+        return format_response(data=result, message="提交退款申请成功")
     else:
-        return {
-            'status': 'failed',
-            'refund_status': '提交退款申请失败',
-        }
+        return format_response(message="提交退款申请失败", code=500)
 
 @router.put('/refund')
 def refund_update_api(refunddata: refund_request.RefundUpdate, db=Depends(get_db)):
     result = refund_func.refund_update_func(refunddata, db)
     if result:
-        return {
-            'status': 'success',
-            'refund_status': '修改退款状态成功'
-        }
+        return format_response(message="修改退款状态成功")
     else:
         raise HTTPException(404, 'Not Found')
 
@@ -44,8 +36,5 @@ def refund_update_api(refunddata: refund_request.RefundUpdate, db=Depends(get_db
 def refund_delete_api(refund_id: UUIDStr, db=Depends(get_db)):
     result = refund_func.refund_delete_func(refund_id, db)
     if result:
-        return {
-            'status': 'success',
-            'refund_status': '退款记录已删除'
-        }
+        return format_response(message="退款记录已删除")
     raise HTTPException(404, 'Not Found')

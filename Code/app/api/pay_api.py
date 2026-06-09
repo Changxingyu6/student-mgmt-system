@@ -3,6 +3,7 @@ from database import get_db
 from schema import UUIDStr
 from services import pay_func
 from schema import pay_request
+from utils import format_response
 
 router = APIRouter(
     prefix="/pay_api",
@@ -14,22 +15,16 @@ def pay_query_api(pay_id: UUIDStr, db=Depends(get_db)):
     result = pay_func.pay_query_func(pay_id, db)
     if not result:
         raise HTTPException(404, 'Not Found')
-    return result
+    return format_response(data=result, message="获取支付记录成功")
 
 @router.post('/pay')
 def pay_insert_api(ordersdata: pay_request.PayRequest, db=Depends(get_db)):
     """创建支付记录"""
     result = pay_func.pay_insert_func(ordersdata, db)
     if result:
-        return {
-            'status': 'success',
-            'message': '提交支付记录成功'
-        }
+        return format_response(data=result, message="提交支付记录成功")
     else:
-        return {
-            'status': 'failed',
-            'message': '提交支付记录失败'
-        }
+        return format_response(message="提交支付记录失败", code=500)
 
 @router.post('/pay/process')
 def pay_process_api(pay_request: pay_request.PaymentRequest, db=Depends(get_db)):
@@ -49,11 +44,7 @@ def pay_process_api(pay_request: pay_request.PaymentRequest, db=Depends(get_db))
         db=db
     )
     if result["success"]:
-        return {
-            'status': 'success',
-            'message': result["message"],
-            'data': result["data"]
-        }
+        return format_response(data=result["data"], message=result["message"])
     else:
         raise HTTPException(400, result["message"])
 
@@ -62,10 +53,7 @@ def pay_update_api(ordersdata: pay_request.Payupdata, db=Depends(get_db)):
     """更新支付记录"""
     result = pay_func.pay_update_func(ordersdata, db)
     if result:
-        return {
-            'status': 'success',
-            'message': '修改支付记录成功'
-        }
+        return format_response(message="修改支付记录成功")
     else:
         raise HTTPException(404, 'Not Found')
 
@@ -74,8 +62,5 @@ def pay_delete_api(pay_id: UUIDStr, db=Depends(get_db)):
     """删除支付记录"""
     result = pay_func.pay_delete_func(pay_id, db)
     if result:
-        return {
-            'status': 'success',
-            'message': '支付记录已删除'
-        }
+        return format_response(message="支付记录已删除")
     raise HTTPException(404, 'Not Found')
