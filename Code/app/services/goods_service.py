@@ -55,9 +55,9 @@ def create_goods(db: Session, goods_data: GoodsCreate):
     )
     goods = dao.create_goods(db, goods)
 
-    # 3. 创建规格
-    specs = []
+    # 3. 创建规格和对应库存（库存关联到规格）
     for spec_data in goods_data.specs:
+        # 创建规格
         spec = GoodsSpec(
             id=str(uuid.uuid4()),
             goods_id=goods.id,
@@ -65,18 +65,16 @@ def create_goods(db: Session, goods_data: GoodsCreate):
             spec_value=spec_data.spec_value,
             sort_order=spec_data.sort_order,
         )
-        specs.append(spec)
-    if specs:
-        dao.create_specs_batch(db, specs)
-
-    # 4. 创建库存
-    stock = GoodsStock(
-        id=str(uuid.uuid4()),
-        goods_id=goods.id,
-        stock_num=goods_data.stock.stock_num,
-        lock_stock=goods_data.stock.lock_stock,
-    )
-    dao.create_stock(db, stock)
+        spec = dao.create_spec(db, spec)
+        
+        # 创建该规格的库存
+        stock = GoodsStock(
+            id=str(uuid.uuid4()),
+            spec_id=spec.id,
+            stock_num=spec_data.stock_num,
+            warning_stock=goods_data.stock_warning,
+        )
+        dao.create_stock(db, stock)
 
     return goods
 
@@ -107,11 +105,11 @@ def get_goods_list(db: Session, filters: dict, page: int = 1, page_size: int = 1
     return dao.get_goods_list(db, filters, skip, page_size)
 
 
-def update_stock(db: Session, goods_id: str, delta: int):
+def update_stock(db: Session, spec_id: str, delta: int):
     """手动调整库存（正数增加，负数减少）"""
-    stock = dao.get_stock_by_goods_id(db, goods_id)
+    stock = dao.get_stock_by_spec_id(db, spec_id)
     if not stock:
-        raise ValueError("商品库存不存在")
+        raise ValueError("规格库存不存在")
 
     new_stock = stock.stock_num + delta
     if new_stock < 0:
@@ -124,3 +122,15 @@ def update_stock(db: Session, goods_id: str, delta: int):
 def get_low_stock_list(db: Session, custom_threshold: int = None):
     """获取库存预警商品列表"""
     return dao.get_low_stock_goods(db, custom_threshold)
+
+
+def deduct_stock_by_spec(db: Session, spec_id: str, quantity: int):
+    """扣减库存（用于下单）"""
+    stock = dao.get_stock_by_spec_id(db, spec_id)
+    if not stock:
+        raise ValueError("规格库存不存在")
+    if stock.stock_num < quantity:
+        raise ValueError(f"库存不足，当前库存：{stock.stock_num}")
+    stock.stock_num -= quantity
+    db.commit()
+    return stock

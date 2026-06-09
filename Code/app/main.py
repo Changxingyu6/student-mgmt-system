@@ -42,7 +42,10 @@ async def auth_middleware(request: Request, call_next):
     if any(request.url.path.startswith(path) for path in WHITELIST):
         response = await call_next(request)
         return response
-    
+
+    response = await call_next(request)
+    return response
+
     # 2. 获取 Token
     token = None
     if "Authorization" in request.headers:
