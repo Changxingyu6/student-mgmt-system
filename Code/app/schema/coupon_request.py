@@ -1,16 +1,10 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Any, List
+from typing import Optional, List
 from datetime import datetime
 from decimal import Decimal
 
 
-# 统一的响应格式
-class ResponseModel(BaseModel):
-    code: int = 200
-    msg: str = "success"
-    data: Optional[Any] = None
-
-#优惠券
+# 优惠券
 class CouponBase(BaseModel):
     coupons_no: str
     coupons_name: str
@@ -45,8 +39,6 @@ class CouponUpdate(BaseModel):
 class CouponOut(CouponBase):
     id: str
     is_deleted: int
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -60,7 +52,8 @@ class CouponQuery(BaseModel):
     page: int = Field(1, ge=1)
     page_size: int = Field(20, ge=1, le=100)
 
-#用户优惠券
+
+# 用户优惠券
 class UserCouponBase(BaseModel):
     coupon_id: str
     user_id: str
@@ -84,8 +77,6 @@ class UserCouponUpdate(BaseModel):
 class UserCouponOut(UserCouponBase):
     id: str
     is_deleted: int
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -98,42 +89,42 @@ class UserCouponQuery(BaseModel):
     page: int = 1
     page_size: int = 20
 
-#优惠券使用日志
-# class CouponUseLogBase(BaseModel):
-#     user_coupon_id: str
-#     user_id: str
-#     status: int = Field(0, ge=0, le=1, description="0使用失败,1使用成功")
-#     order_id: Optional[str] = None
-#     remark: Optional[str] = None
-#
-#
-# class CouponUseLogCreate(CouponUseLogBase):
-#     pass
-#
-#
-# class CouponUseLogUpdate(BaseModel):
-#     status: Optional[int] = Field(None, ge=0, le=1)
-#     remark: Optional[str] = None
-#
-#
-# class CouponUseLogOut(CouponUseLogBase):
-#     id: str
-#     is_deleted: int
-#     created_at: Optional[datetime] = None
-#     updated_at: Optional[datetime] = None
-#
-#     class Config:
-#         from_attributes = True
-#
-#
-# class CouponUseLogQuery(BaseModel):
-#     user_id: Optional[str] = None
-#     user_coupon_id: Optional[str] = None
-#     status: Optional[int] = None
-#     page: int = 1
-#     page_size: int = 20
 
-#营销活动
+# 优惠券使用日志
+class CouponUseLogBase(BaseModel):
+    user_coupon_id: str
+    user_id: str
+    status: int = Field(0, ge=0, le=1, description="0使用失败,1使用成功")
+    order_id: Optional[str] = None
+    remark: Optional[str] = None
+
+
+class CouponUseLogCreate(CouponUseLogBase):
+    pass
+
+
+class CouponUseLogUpdate(BaseModel):
+    status: Optional[int] = Field(None, ge=0, le=1)
+    remark: Optional[str] = None
+
+
+class CouponUseLogOut(CouponUseLogBase):
+    id: str
+    is_deleted: int
+
+    class Config:
+        from_attributes = True
+
+
+class CouponUseLogQuery(BaseModel):
+    user_id: Optional[str] = None
+    user_coupon_id: Optional[str] = None
+    status: Optional[int] = None
+    page: int = 1
+    page_size: int = 20
+
+
+# 营销活动
 class ActivitiesBase(BaseModel):
     activities_name: str
     activities_type: str = Field(..., pattern="^(1|2)$", description="1满减,2折扣")
@@ -146,7 +137,6 @@ class ActivitiesBase(BaseModel):
 
 class ActivitiesCreate(ActivitiesBase):
     goods_ids: Optional[List[str]] = []
-    order_ids: Optional[List[str]] = []
 
 
 class ActivitiesUpdate(BaseModel):
@@ -158,14 +148,11 @@ class ActivitiesUpdate(BaseModel):
     end_time: Optional[datetime] = None
     status: Optional[int] = Field(None, ge=0, le=1)
     goods_ids: Optional[List[str]] = None
-    order_ids: Optional[List[str]] = None
 
 
 class ActivitiesOut(ActivitiesBase):
     id: str
     is_deleted: int
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -178,7 +165,8 @@ class ActivitiesQuery(BaseModel):
     page: int = 1
     page_size: int = 20
 
-#活动商品关联
+
+# 活动商品关联
 class ActivityGoodsCreate(BaseModel):
     activities_id: str
     goods_id: str
@@ -194,20 +182,3 @@ class ActivityGoodsQuery(BaseModel):
     goods_id: Optional[str] = None
     page: int = 1
     page_size: int = 20
-
-# #活动订单关联
-# class ActivityOrdersCreate(BaseModel):
-#     activities_id: str
-#     orders_id: str
-#
-#
-# class ActivityOrdersDelete(BaseModel):
-#     activities_id: str
-#     orders_id: Optional[str] = None
-#
-#
-# class ActivityOrdersQuery(BaseModel):
-#     activities_id: Optional[str] = None
-#     orders_id: Optional[str] = None
-#     page: int = 1
-#     page_size: int = 20

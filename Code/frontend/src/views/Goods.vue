@@ -11,9 +11,6 @@
 
     <!-- ============ 商品列表 ============ -->
     <div v-show="activeTab === 'list'">
-      <div class="toolbar" v-if="isAdmin">
-        <el-button type="primary" @click="handleAddGoods">+ 新增商品</el-button>
-      </div>
       <!-- 搜索栏 -->
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="商品名称">
