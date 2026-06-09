@@ -51,6 +51,8 @@ def pay_update_dao(orderdata: dict, db: Session) -> bool:
     if not order:
         return False
     for key, value in orderdata.items():
+        if value is None:
+            continue
         if hasattr(order, key):
             setattr(order, key, value)
     return True

@@ -511,7 +511,6 @@ def check_balance_sufficient(db: Session, user_id: str, amount: float) -> bool:
         return False
     
     user_repo.update_balance(db, user_id, -float(amount_decimal))
-    db.commit()
     
     logger.debug(f"余额扣减成功 - 用户ID: {user_id}, 扣减金额: {amount}")
     return True

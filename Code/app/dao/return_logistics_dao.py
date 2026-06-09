@@ -45,6 +45,8 @@ def return_logistics_update_dao(returnlogisticsdata: dict, db: Session) -> bool:
     if not return_logistics:
         return False
     for key, value in returnlogisticsdata.items():
+        if value is None:
+            continue
         if hasattr(return_logistics, key):
             setattr(return_logistics, key, value)
     return True

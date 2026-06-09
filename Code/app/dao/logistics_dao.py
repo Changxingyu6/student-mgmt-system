@@ -45,6 +45,8 @@ def logistics_update_dao(logisticsdata: dict, db: Session) -> bool:
     if not logistics:
         return False
     for key, value in logisticsdata.items():
+        if value is None:
+            continue
         if hasattr(logistics, key):
             setattr(logistics, key, value)
     return True
