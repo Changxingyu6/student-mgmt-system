@@ -10,10 +10,10 @@ from pydantic import StringConstraints
 # 3. 雪花ID（19位）：1843672850827264000
 # 4. 普通数字ID（10-20位）：1234567890
 
-# 定义ID类型别名：支持多种ID格式
+# 定义ID类型别名：支持多种ID格式，长度不超过50
 IDStr: TypeAlias = Annotated[
     str,
-    StringConstraints(min_length=10, max_length=50)
+    StringConstraints(max_length=50)
 ]
 
 # 保持向后兼容的别名
