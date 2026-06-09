@@ -9,6 +9,8 @@ from .ai_api import router as ai_api_router
 from .data_analysis_api import router as data_router
 from .shopping_cart_api import router as shopping_cart
 from .coupon_api import router as coupon_api_router
+from .goods_api import goods_router
+
 # 统一导出所有路由
 __all__ = ["user_api_router",
            "role_api_router",
@@ -17,5 +19,6 @@ __all__ = ["user_api_router",
            "ai_api_router",
            "data_router",
            "shopping_cart",
-           "coupon_api_router"
+           "coupon_api_router",
+           "goods_router"
            ]
