@@ -1,8 +1,12 @@
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String, DECIMAL, ForeignKey, Table, VARCHAR, DateTime, func
 
+# 从统一的 model 模块导入 Base
+from . import Base
 
-Base = declarative_base()
+# 提前导入依赖的模型类，确保在 Activities 定义时已加载
+from .goods_model import Goods
+from .order import Order
 
 activities_goods = Table(
     'activities_goods',
@@ -86,5 +90,5 @@ class Activities(Base):
     created_at = Column(DateTime, server_default=func.now(), comment='创建时间')
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), comment='更新时间')
     goods = relationship("Goods", secondary=activities_goods, backref="activities")
-    orders = relationship("Orders", secondary=activities_orders, backref="activities")
+    orders = relationship("Order", secondary=activities_orders, backref="activities")
 
