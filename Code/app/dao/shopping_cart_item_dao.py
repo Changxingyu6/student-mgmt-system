@@ -19,7 +19,7 @@ def _item_to_dict(item: ShoppingCartItem) -> Dict:
         "spec_id": item.spec_id,
         "buy_num": item.buy_num,
         "is_checked": bool(item.is_checked),
-        "add_time": item.add_time.strftime("%Y-%m-%d %H:%M:%S") if item.add_time else None,
+        "create_time": item.create_time.strftime("%Y-%m-%d %H:%M:%S") if item.create_time else None,
         "update_time": item.update_time.strftime("%Y-%m-%d %H:%M:%S") if item.update_time else None
     }
 
@@ -32,7 +32,7 @@ def add_cart_item(db: Session, cart_id: str, goods_id: str, spec_id: str = None,
         ShoppingCartItem.cart_id == cart_id,
         ShoppingCartItem.goods_id == goods_id,
         ShoppingCartItem.spec_id == spec_id,
-        ShoppingCartItem.is_delete == False
+        ShoppingCartItem.is_deleted == False
     ).first()
     
     if existing_item:
@@ -49,9 +49,7 @@ def add_cart_item(db: Session, cart_id: str, goods_id: str, spec_id: str = None,
             spec_id=spec_id,
             buy_num=buy_num,
             is_checked=True,
-            add_time=datetime.now(),
-            update_time=datetime.now(),
-            is_delete=False
+            is_deleted=False
         )
         db.add(new_item)
         db.commit()
@@ -63,8 +61,8 @@ def get_cart_items_by_cart_id(db: Session, cart_id: str) -> List[Dict]:
     """获取购物车所有商品项"""
     items = db.query(ShoppingCartItem).filter(
         ShoppingCartItem.cart_id == cart_id,
-        ShoppingCartItem.is_delete == False
-    ).order_by(ShoppingCartItem.add_time.desc()).all()
+        ShoppingCartItem.is_deleted == False
+    ).order_by(ShoppingCartItem.create_time.desc()).all()
     return [_item_to_dict(item) for item in items]
 
 
@@ -73,7 +71,7 @@ def update_cart_item(db: Session, item_id: str, cart_id: str, buy_num: int = Non
     item = db.query(ShoppingCartItem).filter(
         ShoppingCartItem.item_id == item_id,
         ShoppingCartItem.cart_id == cart_id,
-        ShoppingCartItem.is_delete == False
+        ShoppingCartItem.is_deleted == False
     ).first()
     
     if not item:
@@ -95,13 +93,13 @@ def delete_cart_item(db: Session, item_id: str, cart_id: str) -> bool:
     item = db.query(ShoppingCartItem).filter(
         ShoppingCartItem.item_id == item_id,
         ShoppingCartItem.cart_id == cart_id,
-        ShoppingCartItem.is_delete == False
+        ShoppingCartItem.is_deleted == False
     ).first()
     
     if not item:
         return False
     
-    item.is_delete = True
+    item.is_deleted = True
     item.update_time = datetime.now()
     db.commit()
     return True
@@ -111,9 +109,9 @@ def clear_cart_items(db: Session, cart_id: str) -> bool:
     """清空购物车所有商品（逻辑删除）"""
     db.query(ShoppingCartItem).filter(
         ShoppingCartItem.cart_id == cart_id,
-        ShoppingCartItem.is_delete == False
+        ShoppingCartItem.is_deleted == False
     ).update({
-        ShoppingCartItem.is_delete: True,
+        ShoppingCartItem.is_deleted: True,
         ShoppingCartItem.update_time: datetime.now()
     })
     db.commit()
@@ -125,7 +123,7 @@ def get_cart_item_by_id(db: Session, item_id: str, cart_id: str) -> Optional[Dic
     item = db.query(ShoppingCartItem).filter(
         ShoppingCartItem.item_id == item_id,
         ShoppingCartItem.cart_id == cart_id,
-        ShoppingCartItem.is_delete == False
+        ShoppingCartItem.is_deleted == False
     ).first()
     return _item_to_dict(item) if item else None
 
@@ -135,7 +133,7 @@ def get_checked_cart_items(db: Session, cart_id: str) -> List[Dict]:
     items = db.query(ShoppingCartItem).filter(
         ShoppingCartItem.cart_id == cart_id,
         ShoppingCartItem.is_checked == True,
-        ShoppingCartItem.is_delete == False
+        ShoppingCartItem.is_deleted == False
     ).all()
     return [_item_to_dict(item) for item in items]
 
@@ -144,5 +142,5 @@ def count_cart_items(db: Session, cart_id: str) -> int:
     """统计购物车商品数量"""
     return db.query(ShoppingCartItem).filter(
         ShoppingCartItem.cart_id == cart_id,
-        ShoppingCartItem.is_delete == False
+        ShoppingCartItem.is_deleted == False
     ).count()
