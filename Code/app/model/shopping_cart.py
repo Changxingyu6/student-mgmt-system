@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 class ShoppingCart(Base):
-    """购物车主表 ORM 模型"""
+    """购物车主表 """
     __tablename__ = "shopping_cart"
     
     cart_id = Column(String(50), primary_key=True, comment="购物车主键ID")

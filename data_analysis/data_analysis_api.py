@@ -14,28 +14,28 @@ router = APIRouter(prefix="/data-analysis", tags=["数据分析"])
 
 # ========== 用户统计相关 ==========
 
-@router.get("/users/weekly", response_model=Dict, summary="获取当周新增用户数（最近7天）")
+@router.get("/users/weekly", response_model=Dict)
 def get_weekly_new_users(db: Session = Depends(get_db)):
     """获取当周新增用户数（最近7天）"""
     result = analysis_service.get_weekly_new_users(db)
     return format_response(data=result, message="获取当周新增用户数成功")
 
 
-@router.get("/users/monthly", response_model=Dict, summary="获取当月新增用户数（最近30天）")
+@router.get("/users/monthly", response_model=Dict)
 def get_monthly_new_users(db: Session = Depends(get_db)):
     """获取当月新增用户数（最近30天）"""
     result = analysis_service.get_monthly_new_users(db)
     return format_response(data=result, message="获取当月新增用户数成功")
 
 
-@router.get("/users/statistics", response_model=Dict, summary="获取用户综合统计数据（包含周统计和月统计）")
+@router.get("/users/statistics", response_model=Dict)
 def get_user_statistics(db: Session = Depends(get_db)):
     """获取用户综合统计数据（包含周统计和月统计）"""
     result = analysis_service.get_user_statistics(db)
     return format_response(data=result, message="获取用户综合统计数据成功")
 
 
-@router.get("/users/level-statistics", response_model=Dict,summary="获取各用户等级的人数统计")
+@router.get("/users/level-statistics", response_model=Dict)
 def get_user_level_statistics(db: Session = Depends(get_db)):
     """获取各用户等级的人数统计"""
     result = analysis_service.get_user_level_statistics(db)
@@ -44,7 +44,7 @@ def get_user_level_statistics(db: Session = Depends(get_db)):
 
 # ========== 商品统计相关 ==========
 
-@router.get("/goods/top-selling", response_model=Dict,summary="获取销量前N的商品（默认前20）")
+@router.get("/goods/top-selling", response_model=Dict)
 def get_top_selling_goods(limit: int = 20, db: Session = Depends(get_db)):
     """获取销量前N的商品（默认前20）"""
     result = analysis_service.get_top_selling_goods(db, limit)
@@ -52,7 +52,7 @@ def get_top_selling_goods(limit: int = 20, db: Session = Depends(get_db)):
     return format_response(data=result, message=message)
 
 
-@router.get("/goods/category-statistics", response_model=Dict,summary="获取各商品分类统计数据（在售商品数量、平均售价）")
+@router.get("/goods/category-statistics", response_model=Dict)
 def get_category_statistics(db: Session = Depends(get_db)):
     """获取各商品分类统计数据（在售商品数量、平均售价）"""
     result = analysis_service.get_category_statistics(db)
@@ -60,7 +60,7 @@ def get_category_statistics(db: Session = Depends(get_db)):
     return format_response(data=result, message=message)
 
 
-@router.get("/goods/low-stock", response_model=Dict,summary="获取库存低于预警值的商品")
+@router.get("/goods/low-stock", response_model=Dict)
 def get_low_stock_goods(db: Session = Depends(get_db)):
     """获取库存低于预警值的商品"""
     result = analysis_service.get_low_stock_goods(db)
@@ -70,10 +70,10 @@ def get_low_stock_goods(db: Session = Depends(get_db)):
 
 # ========== 订单统计相关 ==========
 
-@router.get("/orders/statistics", response_model=Dict,summary="按日/周/月统计订单数据")
+@router.get("/orders/statistics", response_model=Dict)
 def get_order_statistics(period: str = 'day', db: Session = Depends(get_db)):
     """按日/周/月统计订单数据
-
+    
     参数说明：
     - period: 统计周期，可选值：day（日）、week（周）、month（月），默认 day
     """
@@ -82,7 +82,7 @@ def get_order_statistics(period: str = 'day', db: Session = Depends(get_db)):
     return format_response(data=result, message=message)
 
 
-@router.get("/orders/payment-statistics", response_model=Dict,summary="统计各支付方式的订单数量与交易金额")
+@router.get("/orders/payment-statistics", response_model=Dict)
 def get_payment_statistics(db: Session = Depends(get_db)):
     """统计各支付方式的订单数量与交易金额"""
     result = analysis_service.get_payment_method_statistics(db)
@@ -90,10 +90,10 @@ def get_payment_statistics(db: Session = Depends(get_db)):
     return format_response(data=result, message=message)
 
 
-@router.get("/orders/overdue-unpaid", response_model=Dict,summary="查询未付款超时订单")
+@router.get("/orders/overdue-unpaid", response_model=Dict)
 def get_overdue_unpaid_orders(timeout_hours: int = 24, db: Session = Depends(get_db)):
     """查询未付款超时订单
-
+    
     参数说明：
     - timeout_hours: 超时时间（小时），默认24小时
     """
@@ -102,10 +102,10 @@ def get_overdue_unpaid_orders(timeout_hours: int = 24, db: Session = Depends(get
     return format_response(data=result, message=message)
 
 
-@router.get("/orders/long-time-unshipped", response_model=Dict,summary="查询长时间未发货订单")
+@router.get("/orders/long-time-unshipped", response_model=Dict)
 def get_long_time_unshipped_orders(timeout_hours: int = 48, db: Session = Depends(get_db)):
     """查询长时间未发货订单
-
+    
     参数说明：
     - timeout_hours: 超时时间（小时），默认48小时
     """
@@ -116,7 +116,7 @@ def get_long_time_unshipped_orders(timeout_hours: int = 48, db: Session = Depend
 
 # ========== 营销数据统计相关 ==========
 
-@router.get("/marketing/coupon-statistics", response_model=Dict,summary="统计各优惠券领取数量、使用数量、核销率")
+@router.get("/marketing/coupon-statistics", response_model=Dict)
 def get_coupon_statistics(db: Session = Depends(get_db)):
     """统计各优惠券领取数量、使用数量、核销率"""
     result = analysis_service.get_coupon_statistics(db)
@@ -124,7 +124,7 @@ def get_coupon_statistics(db: Session = Depends(get_db)):
     return format_response(data=result, message=message)
 
 
-@router.get("/marketing/activity-statistics", response_model=Dict,summary="统计营销活动基本信息")
+@router.get("/marketing/activity-statistics", response_model=Dict)
 def get_activity_statistics(db: Session = Depends(get_db)):
     """统计营销活动基本信息"""
     result = analysis_service.get_activity_statistics(db)

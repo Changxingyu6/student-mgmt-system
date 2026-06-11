@@ -43,6 +43,11 @@ const routes = [
         component: () => import('@/views/Addresses.vue')
       },
       {
+        path: 'orders',
+        name: 'Orders',
+        component: () => import('@/views/Orders.vue')
+      },
+      {
         path: 'cart',
         name: 'Cart',
         component: () => import('@/views/Cart.vue')
@@ -81,6 +86,12 @@ const routes = [
         path: 'return-logistics',
         name: 'ReturnLogistics',
         component: () => import('@/views/ReturnLogistics.vue')
+      },
+      {
+        path: 'data-analysis',
+        name: 'DataAnalysis',
+        component: () => import('@/views/DataAnalysis.vue'),
+        meta: { requiresAdmin: true }
       }
     ]
   }

@@ -514,3 +514,58 @@ def check_balance_sufficient(db: Session, user_id: str, amount: float) -> bool:
     
     logger.debug(f"余额扣减成功 - 用户ID: {user_id}, 扣减金额: {amount}")
     return True
+
+
+def update_user_points_and_level(user_id: str, points_add: int, db: Session) -> dict:
+    """
+    更新用户积分并升级会员等级
+    规则：
+    - 积分按原价/10计算
+    - 1000积分 = 白银会员（95折）
+    - 10000积分 = 黄金会员（9折）
+    """
+    logger.debug(f"更新用户积分 - 用户ID: {user_id}, 增加积分: {points_add}")
+    
+    # 获取用户当前信息
+    user = user_repo.get_user_by_id(db, user_id)
+    if not user:
+        logger.warn(f"更新积分失败 - 用户不存在 - 用户ID: {user_id}")
+        return {"success": False, "message": "用户不存在"}
+    
+    # 更新积分
+    current_points = user.points or 0
+    new_points = current_points + points_add
+    user.points = new_points
+    
+    # 根据积分升级会员等级
+    current_level = user.user_level
+    current_discount = user.discount_rate
+    
+    if new_points >= 10000:
+        new_level = "黄金会员"
+        new_discount = 0.90
+    elif new_points >= 1000:
+        new_level = "白银会员"
+        new_discount = 0.95
+    else:
+        new_level = "青铜会员"
+        new_discount = 1.00
+    
+    # 更新等级和折扣
+    user.user_level = new_level
+    user.discount_rate = new_discount
+    
+    db.commit()
+    
+    logger.debug(f"积分更新成功 - 用户ID: {user_id}, 原积分: {current_points}, 新积分: {new_points}, 原等级: {current_level}, 新等级: {new_level}")
+    
+    return {
+        "success": True,
+        "message": "积分更新成功",
+        "data": {
+            "user_id": user_id,
+            "points": new_points,
+            "user_level": new_level,
+            "discount_rate": new_discount
+        }
+    }

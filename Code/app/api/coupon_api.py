@@ -6,7 +6,7 @@ from utils import format_response, require_roles
 from schema.coupon_request import (
     CouponCreate, CouponUpdate, CouponQuery,
     UserCouponCreate, UserCouponUpdate, UserCouponQuery,
-    # CouponUseLogCreate, CouponUseLogUpdate, CouponUseLogQuery,
+    CouponUseLogCreate, CouponUseLogUpdate, CouponUseLogQuery,
     ActivitiesCreate, ActivitiesUpdate, ActivitiesQuery,
     ActivityGoodsCreate, ActivityGoodsQuery,
 )
@@ -41,6 +41,54 @@ def get_coupons(
     skip = (page - 1) * page_size
     data = coupon_service.get_coupons(db, coupons_no, coupons_name, type, status, skip, page_size)
     return format_response(data=data)
+
+
+# ==================== 优惠券使用日志 CouponUseLog API ====================
+# 注意：use-logs 路由必须放在 /{coupon_id} 之前，避免被路径参数吞掉
+
+@router1.post("/use-logs", summary="创建优惠券使用日志")
+def create_use_log(log: CouponUseLogCreate, db: Session = Depends(get_db)):
+    data = coupon_service.create_use_log(db, log)
+    return format_response(data=data, message="使用日志创建成功")
+
+
+@router1.get("/use-logs", summary="查询优惠券使用日志列表")
+def get_use_logs(
+    user_id: Optional[str] = Query(None),
+    user_coupon_id: Optional[str] = Query(None),
+    order_id: Optional[str] = Query(None),
+    status: Optional[int] = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    skip = (page - 1) * page_size
+    data = coupon_service.get_use_logs(db, user_id, user_coupon_id, order_id, status, skip, page_size)
+    return format_response(data=data)
+
+
+@router1.get("/use-logs/{log_id}", summary="查询单条使用日志")
+def get_use_log(log_id: str, db: Session = Depends(get_db)):
+    data = coupon_service.get_use_log(db, log_id)
+    if not data:
+        return format_response(code=404, message="使用日志不存在")
+    return format_response(data=data)
+
+
+@router1.put("/use-logs/{log_id}", summary="更新使用日志")
+def update_use_log(log_id: str, log_update: CouponUseLogUpdate, db: Session = Depends(get_db)):
+    data = coupon_service.update_use_log(db, log_id, log_update)
+    if not data:
+        return format_response(code=404, message="使用日志不存在")
+    return format_response(data=data, message="使用日志更新成功")
+
+
+@router1.delete("/use-logs/{log_id}", summary="删除使用日志")
+def delete_use_log(log_id: str, db: Session = Depends(get_db)):
+    success = coupon_service.delete_use_log(db, log_id)
+    if not success:
+        return format_response(code=404, message="使用日志不存在")
+    return format_response(message="使用日志已删除")
 
 
 @router1.get("/{coupon_id}")
@@ -138,52 +186,6 @@ def delete_user_coupon(uc_id: str, db: Session = Depends(get_db)):
     if not success:
         return format_response(code=404, message="用户优惠券不存在")
     return format_response(message="用户优惠券已删除")
-
-
-# ==================== 优惠券使用日志 CouponUseLog API ====================
-
-# @router1.post("/use-logs")
-# def create_use_log(log: CouponUseLogCreate, db: Session = Depends(get_db)):
-#     data = coupon_service.create_use_log(db, log)
-#     return format_response(data=data, message="使用日志创建成功")
-#
-#
-# @router1.get("/use-logs")
-# def get_use_logs(
-#     user_id: Optional[str] = Query(None),
-#     user_coupon_id: Optional[str] = Query(None),
-#     status: Optional[int] = Query(None),
-#     page: int = Query(1, ge=1),
-#     page_size: int = Query(20, ge=1, le=100),
-#     db: Session = Depends(get_db)
-# ):
-#     skip = (page - 1) * page_size
-#     data = coupon_service.get_use_logs(db, user_id, user_coupon_id, status, skip, page_size)
-#     return format_response(data=data)
-#
-#
-# @router1.get("/use-logs/{log_id}")
-# def get_use_log(log_id: str, db: Session = Depends(get_db)):
-#     data = coupon_service.get_use_log(db, log_id)
-#     if not data:
-#         return format_response(code=404, message="使用日志不存在")
-#     return format_response(data=data)
-#
-#
-# @router1.put("/use-logs/{log_id}")
-# def update_use_log(log_id: str, log_update: CouponUseLogUpdate, db: Session = Depends(get_db)):
-#     data = coupon_service.update_use_log(db, log_id, log_update)
-#     if not data:
-#         return format_response(code=404, message="使用日志不存在")
-#     return format_response(data=data, message="使用日志更新成功")
-#
-#
-# @router1.delete("/use-logs/{log_id}")
-# def delete_use_log(log_id: str, db: Session = Depends(get_db)):
-#     success = coupon_service.delete_use_log(db, log_id)
-#     if not success:
-#         return format_response(code=404, message="使用日志不存在")
-#     return format_response(message="使用日志已删除")
 
 
 # ==================== 营销活动 Activities API ====================

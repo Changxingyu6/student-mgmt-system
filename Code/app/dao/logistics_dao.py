@@ -26,9 +26,11 @@ def logistics_query_by_order_dao(order_id, db: Session):
 
 # 新增数据
 def logistics_insert_dao(logisticsdata: dict, db: Session) -> bool:
+    import uuid
     logistics_info = {
         **logisticsdata,
         "logistics_id": generate_uuid(),
+        "logistics_no": f"L{uuid.uuid4().hex[:24]}",
         "logistics_status": "待发货",
         "is_deleted": "0",
     }

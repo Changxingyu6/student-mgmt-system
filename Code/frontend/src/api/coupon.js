@@ -39,6 +39,12 @@ export function receiveCoupon(couponId, userId) {
 export function listUserCoupons(params) {
   return request({ url: '/usercoupons/user-coupons', method: 'get', params })
 }
+
+// 根据用户ID获取用户优惠券列表
+export function getUserCoupons(userId) {
+  return request({ url: '/usercoupons/user-coupons', method: 'get', params: { user_id: userId } })
+}
+
 // 获取用户优惠券详情
 export function getUserCoupon(id) {
   return request({ url: `/usercoupons/user-coupons/${id}`, method: 'get' })

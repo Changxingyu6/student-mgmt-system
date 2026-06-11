@@ -67,6 +67,11 @@ async def auth_middleware(request: Request, call_next):
     JWT 认证中间件
     对非白名单路径进行 Token 验证
     """
+
+    # 取消认证中间件
+    # response = await call_next(request)
+    # return response
+
     start_time = time.time()
     
     # 1. 检查是否是 OPTIONS 请求（CORS预检请求），直接放行

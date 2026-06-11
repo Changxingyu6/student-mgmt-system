@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
 from model.user import User
-from model.goods_model import Goods, GoodsCategory, GoodsStock, GoodsSpec
+from model.goods_model import Goods, GoodsCategory, GoodsStock
 from model.order_item import OrderItem
 from model.coupon import Coupon, UserCoupon, Activities
 
@@ -44,32 +44,32 @@ def count_users_by_level(db: Session) -> list:
     ).filter(
         User.is_deleted == False
     ).group_by(User.user_level).all()
-
+    
     return [{"level": row.user_level, "count": row.count} for row in result]
 
 
 # ========== 商品统计相关 ==========
 
 def get_top_selling_goods(db: Session, limit: int = 20) -> list:
-    """查询销量前N的商品（INNER JOIN 销量>0 的商品，COLLATE 解决字符集）"""
+    """查询销量前N的商品"""
     from sqlalchemy import text
-
+    
     sql = """
-    SELECT g.id AS goods_id, g.goods_name,
-           SUM(oi.quantity) AS sales_volume,
-           SUM(oi.quantity * g.price) AS sales_amount,
+    SELECT g.id AS goods_id, g.goods_name, 
+           SUM(oi.quantity) AS sales_volume, 
+           SUM(oi.quantity * g.price) AS sales_amount, 
            gc.category_name
     FROM goods g
     INNER JOIN order_items oi ON g.id COLLATE utf8mb4_unicode_ci = oi.product_id COLLATE utf8mb4_unicode_ci
     INNER JOIN goods_category gc ON g.category_id COLLATE utf8mb4_unicode_ci = gc.id COLLATE utf8mb4_unicode_ci
     WHERE g.sale_status = 1
     GROUP BY g.id, g.goods_name, gc.category_name
-    ORDER BY sales_volume DESC
+    ORDER BY SUM(oi.quantity) DESC
     LIMIT :limit
     """
-
+    
     result = db.execute(text(sql), {"limit": limit}).fetchall()
-
+    
     return [{
         "goods_id": row.goods_id,
         "goods_name": row.goods_name,
@@ -80,9 +80,9 @@ def get_top_selling_goods(db: Session, limit: int = 20) -> list:
 
 
 def get_category_statistics(db: Session) -> list:
-    """统计各商品分类的在售商品数量、平均售价（INNER JOIN + COLLATE）"""
+    """统计各商品分类的在售商品数量、平均售价"""
     from sqlalchemy import text
-
+    
     sql = """
     SELECT gc.id AS category_id, gc.category_name,
            COUNT(g.id) AS goods_count,
@@ -92,9 +92,9 @@ def get_category_statistics(db: Session) -> list:
     WHERE g.sale_status = 1
     GROUP BY gc.id, gc.category_name
     """
-
+    
     result = db.execute(text(sql)).fetchall()
-
+    
     return [{
         "category_id": row.category_id,
         "category_name": row.category_name,
@@ -103,28 +103,30 @@ def get_category_statistics(db: Session) -> list:
     } for row in result]
 
 
-def get_on_sale_goods(db: Session) -> list:
-    """查询所有在售商品（goods.sale_status = 1）"""
-    from model.goods_model import Goods
-    return db.query(Goods).filter(Goods.sale_status == 1).all()
-
-
-def get_all_specs(db: Session) -> list:
-    """查询所有商品规格"""
-    from model.goods_model import GoodsSpec
-    return db.query(GoodsSpec).all()
-
-
-def get_all_stocks(db: Session) -> list:
-    """查询所有规格库存"""
-    from model.goods_model import GoodsStock
-    return db.query(GoodsStock).all()
-
-
-def get_all_categories(db: Session) -> list:
-    """查询所有商品分类"""
-    from model.goods_model import GoodsCategory
-    return db.query(GoodsCategory).all()
+def get_low_stock_goods(db: Session) -> list:
+    """查询库存低于预警值的所有商品"""
+    from sqlalchemy import text
+    
+    sql = """
+    SELECT g.id AS goods_id, g.goods_name, g.price,
+           g.stock_warning, gs.stock_num, gc.category_name
+    FROM goods g
+    INNER JOIN goods_stock gs ON g.id COLLATE utf8mb4_unicode_ci = gs.goods_id COLLATE utf8mb4_unicode_ci
+    INNER JOIN goods_category gc ON g.category_id COLLATE utf8mb4_unicode_ci = gc.id COLLATE utf8mb4_unicode_ci
+    WHERE g.sale_status = 1 AND gs.stock_num < g.stock_warning
+    """
+    
+    result = db.execute(text(sql)).fetchall()
+    
+    return [{
+        "goods_id": row.goods_id,
+        "goods_name": row.goods_name,
+        "price": float(row.price) if row.price else 0,
+        "stock_warning": int(row.stock_warning) if row.stock_warning else 0,
+        "current_stock": int(row.stock_num) if row.stock_num else 0,
+        "category_name": row.category_name,
+        "stock_shortage": int(row.stock_warning) - int(row.stock_num) if row.stock_warning and row.stock_num else 0
+    } for row in result]
 
 
 # ========== 订单统计相关 ==========
@@ -132,18 +134,22 @@ def get_all_categories(db: Session) -> list:
 def get_order_statistics_by_period(db: Session, period: str = 'day') -> list:
     """按日/周/月统计订单数据"""
     from sqlalchemy import text
-
+    
     if period == 'day':
+        date_format = "%Y-%m-%d"
         date_trunc = "DATE(o.create_time)"
     elif period == 'week':
-        date_trunc = "YEARWEEK(o.create_time, 3)"
+        date_format = "%Y-%u"
+        date_trunc = "YEAR(o.create_time) * 100 + WEEK(o.create_time)"
     elif period == 'month':
-        date_trunc = "DATE_FORMAT(o.create_time, '%Y-%m')"
+        date_format = "%Y-%m"
+        date_trunc = "YEAR(o.create_time) * 100 + MONTH(o.create_time)"
     else:
+        date_format = "%Y-%m-%d"
         date_trunc = "DATE(o.create_time)"
-
+    
     sql = f"""
-    SELECT
+    SELECT 
         {date_trunc} AS period,
         COUNT(o.id) AS total_orders,
         SUM(CASE WHEN o.pay_status = 'paid' THEN 1 ELSE 0 END) AS paid_orders,
@@ -155,15 +161,15 @@ def get_order_statistics_by_period(db: Session, period: str = 'day') -> list:
     ORDER BY {date_trunc} DESC
     LIMIT 30
     """
-
+    
     result = db.execute(text(sql)).fetchall()
-
+    
     statistics = []
     for row in result:
         total = row.total_orders if row.total_orders else 0
         refund = row.refund_orders if row.refund_orders else 0
         refund_ratio = round(refund / total * 100, 2) if total > 0 else 0
-
+        
         statistics.append({
             "period": str(row.period),
             "total_orders": int(total),
@@ -172,16 +178,16 @@ def get_order_statistics_by_period(db: Session, period: str = 'day') -> list:
             "refund_ratio": refund_ratio,
             "total_amount": round(float(row.total_amount), 2) if row.total_amount else 0
         })
-
+    
     return statistics
 
 
 def get_payment_method_statistics(db: Session) -> list:
     """统计各支付方式的订单数量与交易金额"""
     from sqlalchemy import text
-
+    
     sql = """
-    SELECT
+    SELECT 
         o.payment_method,
         COUNT(o.id) AS order_count,
         SUM(o.actual_pay_amount) AS total_amount
@@ -190,9 +196,9 @@ def get_payment_method_statistics(db: Session) -> list:
     GROUP BY o.payment_method
     ORDER BY total_amount DESC
     """
-
+    
     result = db.execute(text(sql)).fetchall()
-
+    
     return [{
         "payment_method": row.payment_method,
         "order_count": int(row.order_count) if row.order_count else 0,
@@ -203,9 +209,9 @@ def get_payment_method_statistics(db: Session) -> list:
 def get_overdue_unpaid_orders(db: Session, timeout_hours: int = 24) -> list:
     """查询未付款超时订单"""
     from sqlalchemy import text
-
+    
     sql = f"""
-    SELECT
+    SELECT 
         o.order_id,
         o.user_id,
         o.total_amount,
@@ -214,14 +220,14 @@ def get_overdue_unpaid_orders(db: Session, timeout_hours: int = 24) -> list:
         o.expire_time,
         TIMESTAMPDIFF(MINUTE, o.create_time, NOW()) AS overdue_minutes
     FROM orders o
-    WHERE o.is_deleted = 0
-      AND o.pay_status = 'unpaid'
+    WHERE o.is_deleted = 0 
+      AND o.pay_status = 'unpaid' 
       AND o.expire_time < NOW()
     ORDER BY overdue_minutes DESC
     """
-
+    
     result = db.execute(text(sql)).fetchall()
-
+    
     return [{
         "order_id": row.order_id,
         "user_id": row.user_id,
@@ -236,9 +242,9 @@ def get_overdue_unpaid_orders(db: Session, timeout_hours: int = 24) -> list:
 def get_long_time_unshipped_orders(db: Session, timeout_hours: int = 48) -> list:
     """查询长时间未发货订单"""
     from sqlalchemy import text
-
+    
     sql = f"""
-    SELECT
+    SELECT 
         o.order_id,
         o.user_id,
         o.total_amount,
@@ -247,16 +253,16 @@ def get_long_time_unshipped_orders(db: Session, timeout_hours: int = 48) -> list
         o.receiver_name,
         o.receiver_phone
     FROM orders o
-    WHERE o.is_deleted = 0
-      AND o.pay_status = 'paid'
+    WHERE o.is_deleted = 0 
+      AND o.pay_status = 'paid' 
       AND o.logistics_status = 'waiting_ship'
       AND o.pay_time IS NOT NULL
       AND TIMESTAMPDIFF(HOUR, o.pay_time, NOW()) >= {timeout_hours}
     ORDER BY wait_hours DESC
     """
-
+    
     result = db.execute(text(sql)).fetchall()
-
+    
     return [{
         "order_id": row.order_id,
         "user_id": row.user_id,
@@ -283,13 +289,13 @@ def get_coupon_statistics(db: Session) -> list:
         Coupon.sent_count,
         Coupon.used_count
     ).filter(Coupon.is_deleted == 0).all()
-
+    
     statistics = []
     for row in result:
         sent_count = row.sent_count if row.sent_count else 0
         used_count = row.used_count if row.used_count else 0
         use_rate = round(used_count / sent_count * 100, 2) if sent_count > 0 else 0
-
+        
         statistics.append({
             "coupon_id": row.id,
             "coupon_no": row.coupons_no,
@@ -304,7 +310,7 @@ def get_coupon_statistics(db: Session) -> list:
             "use_rate": use_rate,
             "remaining_count": int(row.total_count) - sent_count if row.total_count else 0
         })
-
+    
     return statistics
 
 
@@ -320,7 +326,7 @@ def get_activity_statistics(db: Session) -> list:
         Activities.end_time,
         Activities.status
     ).filter(Activities.is_deleted == 0).all()
-
+    
     statistics = []
     for row in result:
         now = datetime.now()
@@ -333,7 +339,7 @@ def get_activity_statistics(db: Session) -> list:
                 status = "已结束"
         else:
             status = "未知"
-
+        
         statistics.append({
             "activity_id": row.id,
             "activity_name": row.activities_name,
@@ -345,5 +351,5 @@ def get_activity_statistics(db: Session) -> list:
             "end_time": row.end_time.strftime("%Y-%m-%d %H:%M:%S") if row.end_time else None,
             "status": status
         })
-
+    
     return statistics

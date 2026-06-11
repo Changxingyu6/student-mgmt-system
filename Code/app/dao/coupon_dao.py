@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any, List, Tuple
 from uuid import uuid4
-from model.coupon import Coupon, UserCoupon, Activities, activities_goods
+from model.coupon import Coupon, UserCoupon, CouponUseLog, Activities, activities_goods
 
 
 def generate_id() -> str:
@@ -112,6 +112,15 @@ def delete_user_coupon(db: Session, uc_id: str) -> bool:
     return True
 
 
+def update_user_coupon_status(db: Session, uc_id: str, status: str) -> bool:
+    """更新用户优惠券状态"""
+    uc = get_user_coupon_by_id(db, uc_id)
+    if not uc:
+        return False
+    uc.status = status
+    return True
+
+
 def get_user_coupon_by_user_and_coupon(db: Session, user_id: str, coupon_id: str) -> Optional[UserCoupon]:
     return db.query(UserCoupon).filter(
         UserCoupon.user_id == user_id,
@@ -204,3 +213,56 @@ def get_activity_goods_list(
     total = query.count()
     items = query.offset(skip).limit(limit).all()
     return total, items
+
+
+# ==================== CouponUseLog DAO ====================
+
+def get_use_log_by_id(db: Session, log_id: str) -> Optional[CouponUseLog]:
+    return db.query(CouponUseLog).filter(CouponUseLog.id == log_id, CouponUseLog.is_deleted == 0).first()
+
+
+def get_use_log_list(
+    db: Session,
+    user_id: Optional[str] = None,
+    user_coupon_id: Optional[str] = None,
+    order_id: Optional[str] = None,
+    status: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 20
+) -> Tuple[List[CouponUseLog], int]:
+    query = db.query(CouponUseLog).filter(CouponUseLog.is_deleted == 0)
+    if user_id:
+        query = query.filter(CouponUseLog.user_id == user_id)
+    if user_coupon_id:
+        query = query.filter(CouponUseLog.user_coupon_id == user_coupon_id)
+    if order_id:
+        query = query.filter(CouponUseLog.order_id == order_id)
+    if status is not None:
+        query = query.filter(CouponUseLog.status == status)
+    total = query.count()
+    items = query.order_by(CouponUseLog.id.desc()).offset(skip).limit(limit).all()
+    return total, items
+
+
+def create_use_log(db: Session, data: Dict[str, Any]) -> CouponUseLog:
+    log = CouponUseLog(id=generate_id(), **data)
+    db.add(log)
+    return log
+
+
+def update_use_log(db: Session, log_id: str, update_data: Dict[str, Any]) -> Optional[CouponUseLog]:
+    log = get_use_log_by_id(db, log_id)
+    if not log:
+        return None
+    for key, value in update_data.items():
+        if value is not None:
+            setattr(log, key, value)
+    return log
+
+
+def delete_use_log(db: Session, log_id: str) -> bool:
+    log = get_use_log_by_id(db, log_id)
+    if not log:
+        return False
+    log.is_deleted = 1
+    return True

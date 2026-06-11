@@ -39,9 +39,18 @@ def logistics_update_api(logisticsdata: logistics_request.LogisticsUpdate, db=De
     else:
         raise HTTPException(404, 'Not Found')
 
-@router.delete('/logistics/{logistics_id}')
-def logistics_delete_api(logistics_id: UUIDStr, db=Depends(get_db)):
-    result = logistics_func.logistics_delete_func(logistics_id, db)
+@router.get('/logistics/user/{user_id}')
+def logistics_query_by_user_api(user_id: UUIDStr, db=Depends(get_db)):
+    """查询用户的所有物流记录"""
+    from services import order_service
+    result = order_service.get_user_logistics(user_id, db)
+    return format_response(data=result, message="获取用户物流记录成功")
+
+@router.put('/logistics/{logistics_id}/confirm')
+def logistics_confirm_receipt_api(logistics_id: UUIDStr, db=Depends(get_db)):
+    """确认收货"""
+    result = logistics_func.logistics_confirm_receipt_func(logistics_id, db)
     if result:
-        return format_response(message="物流记录已删除")
-    raise HTTPException(404, 'Not Found')
+        return format_response(data=result, message="确认收货成功")
+    else:
+        raise HTTPException(500, '确认收货失败')

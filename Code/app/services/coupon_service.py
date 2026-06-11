@@ -3,6 +3,7 @@ from uuid import uuid4
 from typing import Optional
 from schema.coupon_request import (
     CouponCreate, CouponUpdate, UserCouponCreate, UserCouponUpdate,
+    CouponUseLogCreate, CouponUseLogUpdate,
     ActivitiesCreate, ActivitiesUpdate
 )
 from dao import coupon_dao
@@ -76,7 +77,34 @@ def get_user_coupons(
 ) -> dict:
     filters = {"user_id": user_id, "coupon_id": coupon_id, "status": status}
     items, total = coupon_dao.get_user_coupon_list(db, filters, skip, limit)
-    return {"total": total, "items": items}
+    
+    # 关联查询优惠券模板信息
+    result_items = []
+    for item in items:
+        item_dict = {
+            "id": item.id,
+            "coupon_no": item.coupon_no,
+            "user_id": item.user_id,
+            "coupon_id": item.coupon_id,
+            "status": item.status,
+            "get_time": item.get_time.strftime("%Y-%m-%d %H:%M:%S") if item.get_time else None,
+            "use_time": item.use_time.strftime("%Y-%m-%d %H:%M:%S") if item.use_time else None,
+            "is_deleted": item.is_deleted
+        }
+        
+        # 关联优惠券模板
+        coupon = coupon_dao.get_coupon_by_id(db, item.coupon_id)
+        if coupon:
+            item_dict["coupons_name"] = coupon.coupons_name
+            item_dict["type"] = coupon.type
+            item_dict["face_value"] = coupon.face_value
+            item_dict["min_spend"] = coupon.min_spend
+            item_dict["valid_start_time"] = coupon.valid_start_time.strftime("%Y-%m-%d %H:%M:%S") if coupon.valid_start_time else None
+            item_dict["valid_end_time"] = coupon.valid_end_time.strftime("%Y-%m-%d %H:%M:%S") if coupon.valid_end_time else None
+        
+        result_items.append(item_dict)
+    
+    return {"total": total, "items": result_items}
 
 
 def create_user_coupon(db: Session, uc: UserCouponCreate):
@@ -223,3 +251,77 @@ def delete_activity_goods(db: Session, activities_id: str, goods_id: Optional[st
     coupon_dao.soft_delete_activity_goods(db, activities_id, goods_id)
     db.commit()
     return True
+
+
+# ==================== CouponUseLog Service ====================
+
+def get_use_log(db: Session, log_id: str):
+    return coupon_dao.get_use_log_by_id(db, log_id)
+
+
+def get_use_logs(
+    db: Session,
+    user_id: Optional[str] = None,
+    user_coupon_id: Optional[str] = None,
+    order_id: Optional[str] = None,
+    status: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 20
+) -> dict:
+    total, items = coupon_dao.get_use_log_list(
+        db, user_id, user_coupon_id, order_id, status, skip, limit
+    )
+    return {
+        "total": total,
+        "items": [
+            {
+                "id": item.id,
+                "user_coupon_id": item.user_coupon_id,
+                "user_id": item.user_id,
+                "order_id": item.order_id,
+                "status": item.status,
+                "remark": item.remark,
+                "is_deleted": item.is_deleted,
+            }
+            for item in items
+        ]
+    }
+
+
+def create_use_log(db: Session, log: CouponUseLogCreate):
+    data = log.model_dump()
+    result = coupon_dao.create_use_log(db, data)
+    db.commit()
+    return {
+        "id": result.id,
+        "user_coupon_id": result.user_coupon_id,
+        "user_id": result.user_id,
+        "order_id": result.order_id,
+        "status": result.status,
+        "remark": result.remark,
+        "is_deleted": result.is_deleted,
+    }
+
+
+def update_use_log(db: Session, log_id: str, log_update: CouponUseLogUpdate):
+    update_dict = {k: v for k, v in log_update.model_dump().items() if v is not None}
+    result = coupon_dao.update_use_log(db, log_id, update_dict)
+    if not result:
+        return None
+    db.commit()
+    return {
+        "id": result.id,
+        "user_coupon_id": result.user_coupon_id,
+        "user_id": result.user_id,
+        "order_id": result.order_id,
+        "status": result.status,
+        "remark": result.remark,
+        "is_deleted": result.is_deleted,
+    }
+
+
+def delete_use_log(db: Session, log_id: str) -> bool:
+    success = coupon_dao.delete_use_log(db, log_id)
+    if success:
+        db.commit()
+    return success

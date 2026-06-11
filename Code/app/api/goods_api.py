@@ -9,7 +9,8 @@ from database import get_db
 from services import goods_service as service
 from schema.goods_schema import (
     GoodsCreate, GoodsUpdate, GoodsResponse,
-    CategoryCreate, CategoryUpdate, CategoryResponse
+    CategoryCreate, CategoryUpdate, CategoryResponse,
+    SpecCreate, SpecUpdate
 )
 from dao import goods_dao as dao
 from utils import format_response
@@ -153,3 +154,74 @@ def low_stock_list(custom_threshold: Optional[int] = Query(None), db: Session = 
         })
     data = {"items": items, "total": len(items)}
     return format_response(data=data, message="获取库存预警列表成功")
+
+
+# ========== 规格管理接口 ==========
+#获取商品的所有规格
+@goods_router.get("/{goods_id}/spec", summary="获取商品规格列表")
+def get_goods_specs(goods_id: str, db: Session = Depends(get_db)):
+    specs = service.get_specs_by_goods_id(db, goods_id)
+    items = []
+    for spec in specs:
+        stock = dao.get_stock_by_spec_id(db, spec.id)
+        items.append({
+            "id": spec.id,
+            "goods_id": spec.goods_id,
+            "spec_name": spec.spec_name,
+            "spec_value": spec.spec_value,
+            "sort_order": spec.sort_order,
+            "stock": {
+                "id": stock.id,
+                "stock_num": stock.stock_num,
+                "warning_stock": stock.warning_stock,
+            } if stock else None
+        })
+    return format_response(data={"items": items, "total": len(items)}, message="获取规格列表成功")
+
+
+#直接设置规格的库存和预警阈值（绝对值）
+@goods_router.put("/spec/{spec_id}/stock-info", summary="直接设置规格库存和阈值")
+def set_spec_stock_info(
+        spec_id: str,
+        stock_num: int = Query(..., ge=0, description="当前库存数"),
+        warning_stock: int = Query(..., ge=0, description="预警阈值"),
+        db: Session = Depends(get_db)
+):
+    try:
+        service.set_stock_info(db, spec_id, stock_num, warning_stock)
+        return format_response(message="库存和阈值更新成功")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+#为商品新增规格
+@goods_router.post("/{goods_id}/spec", summary="为商品新增规格")
+def create_goods_spec(goods_id: str, spec_data: SpecCreate, db: Session = Depends(get_db)):
+    spec = service.create_spec(db, goods_id, spec_data)
+    if not spec:
+        raise HTTPException(status_code=404, detail="商品不存在")
+    return format_response(data={
+        "id": spec.id,
+        "goods_id": spec.goods_id,
+        "spec_name": spec.spec_name,
+        "spec_value": spec.spec_value,
+        "sort_order": spec.sort_order
+    }, message="规格创建成功")
+
+
+#更新规格
+@goods_router.put("/spec/{spec_id}", summary="更新规格")
+def update_goods_spec(spec_id: str, spec_data: SpecUpdate, db: Session = Depends(get_db)):
+    spec = service.update_spec(db, spec_id, spec_data)
+    if not spec:
+        raise HTTPException(status_code=404, detail="规格不存在")
+    return format_response(message="规格更新成功")
+
+
+#删除规格
+@goods_router.delete("/spec/{spec_id}", summary="删除规格")
+def delete_goods_spec(spec_id: str, db: Session = Depends(get_db)):
+    success = service.delete_spec(db, spec_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="规格不存在")
+    return format_response(message="规格删除成功")

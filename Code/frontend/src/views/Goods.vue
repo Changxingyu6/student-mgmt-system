@@ -6,6 +6,7 @@
     <el-tabs v-model="activeTab" @tab-change="handleTabChange">
       <el-tab-pane label="商品列表" name="list"></el-tab-pane>
       <el-tab-pane v-if="isAdmin" label="分类管理" name="category"></el-tab-pane>
+      <el-tab-pane v-if="isAdmin" label="规格管理" name="spec"></el-tab-pane>
       <el-tab-pane v-if="isAdmin" label="库存预警" name="stock"></el-tab-pane>
     </el-tabs>
 
@@ -44,7 +45,7 @@
       </el-form>
 
       <div class="toolbar">
-        <el-button type="primary" @click="handleAddGoods">+ 新增商品</el-button>
+        <el-button v-if="isAdmin" type="primary" @click="handleAddGoods">+ 新增商品</el-button>
       </div>
 
       <!-- 商品列表 -->
@@ -106,7 +107,7 @@
           v-model:current-page="pagination.page"
           v-model:page-size="pagination.page_size"
           :total="pagination.total"
-          :page-sizes="[10, 20, 50]"
+          :page-sizes="[5, 10, 20, 50]"
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="loadGoodsList"
           @current-change="loadGoodsList"
@@ -146,26 +147,104 @@
       </el-table>
     </div>
 
-    <!-- ============ 库存预警 ============ -->
-    <div v-show="activeTab === 'stock'">
+    <!-- ============ 规格管理 ============ -->
+    <div v-show="activeTab === 'spec'">
       <el-form :inline="true" class="search-form">
-        <el-form-item label="自定义阈值">
-          <el-input v-model="stockThreshold" placeholder="留空使用商品自身阈值" style="width: 200px" clearable />
+        <el-form-item label="选择商品">
+          <el-select v-model="specFilterGoodsId" placeholder="请选择商品" filterable clearable style="width: 280px" @change="loadSpecList">
+            <el-option v-for="g in goodsList" :key="g.id" :label="g.goods_name" :value="g.id" />
+          </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="loadLowStock">查询</el-button>
+          <el-button type="primary" :disabled="!specFilterGoodsId" @click="handleAddSpec">+ 新增规格</el-button>
+        </el-form-item>
+        <el-form-item>
+          <el-button :disabled="!specFilterGoodsId" @click="loadSpecList">刷新</el-button>
         </el-form-item>
       </el-form>
 
+      <el-table :data="specList" v-loading="specLoading" border stripe>
+        <el-table-column prop="spec_name" label="规格名" width="140" />
+        <el-table-column prop="spec_value" label="规格值" />
+        <el-table-column label="库存" width="100">
+          <template #default="{ row }">{{ row.stock?.stock_num ?? 0 }}</template>
+        </el-table-column>
+        <el-table-column label="预警阈值" width="100">
+          <template #default="{ row }">{{ row.stock?.warning_stock ?? '-' }}</template>
+        </el-table-column>
+        <el-table-column label="操作" width="180" fixed="right">
+          <template #default="{ row }">
+            <el-button size="small" @click="openSpecDialog(row)">调整库存</el-button>
+            <el-button size="small" type="danger" @click="handleDeleteSpec(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 规格编辑弹窗（规格信息只读，仅可调整库存与阈值） -->
+      <el-dialog v-model="specDialogVisible" title="调整库存与阈值" width="480px">
+        <el-form :model="specForm" label-width="90px">
+          <!-- 区块 1：规格信息（只读） -->
+          <div class="form-section-title">规格信息</div>
+          <el-form-item label="规格名">
+            <el-input v-model="specForm.spec_name" disabled />
+          </el-form-item>
+          <el-form-item label="规格值">
+            <el-input v-model="specForm.spec_value" disabled />
+          </el-form-item>
+
+          <el-divider />
+
+          <!-- 区块 2：库存与阈值（可编辑） -->
+          <div class="form-section-title">库存与阈值</div>
+          <el-form-item label="当前库存">
+            <el-input-number v-model="specForm.stock_num" :min="0" :max="99999" />
+          </el-form-item>
+          <el-form-item label="预警阈值">
+            <el-input-number v-model="specForm.warning_stock" :min="0" :max="9999" />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="specDialogVisible = false">取消</el-button>
+          <el-button type="success" @click="handleSaveStockOnly" :disabled="!specForm.id">保存</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 新增规格弹窗 -->
+      <el-dialog v-model="addSpecDialogVisible" title="新增规格" width="480px">
+        <el-form :model="addSpecForm" label-width="90px">
+          <el-form-item label="规格名">
+            <el-input v-model="addSpecForm.spec_name" placeholder="如：颜色 / 尺寸" />
+          </el-form-item>
+          <el-form-item label="规格值">
+            <el-input v-model="addSpecForm.spec_value" placeholder="如：黑色 / 256GB" />
+          </el-form-item>
+          <el-form-item label="当前库存">
+            <el-input-number v-model="addSpecForm.stock_num" :min="0" :max="99999" />
+          </el-form-item>
+          <el-form-item label="预警阈值">
+            <el-input-number v-model="addSpecForm.warning_stock" :min="0" :max="9999" />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="addSpecDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitAddSpec">保存</el-button>
+        </template>
+      </el-dialog>
+    </div>
+
+    <!-- ============ 库存预警 ============ -->
+    <div v-show="activeTab === 'stock'">
       <el-table :data="lowStockList" v-loading="lowStockLoading" border stripe>
-        <el-table-column prop="goods_name" label="商品名称" min-width="180" />
+        <el-table-column prop="goods_name" label="商品名称" min-width="160" show-overflow-tooltip />
         <el-table-column prop="goods_no" label="商品编号" width="140" />
-        <el-table-column prop="stock_num" label="当前库存" width="120">
+        <el-table-column prop="spec_name" label="规格名" width="100" />
+        <el-table-column prop="spec_value" label="规格值" width="120" show-overflow-tooltip />
+        <el-table-column prop="stock_num" label="当前库存" width="100">
           <template #default="{ row }">
             <el-tag type="danger">{{ row.stock_num }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="warning_threshold" label="预警阈值" width="120" />
+        <el-table-column prop="warning_threshold" label="预警阈值" width="100" />
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="warning" @click="handleQuickReplenish(row)">补货</el-button>
@@ -221,7 +300,7 @@
             <el-radio :value="0">下架</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="库存预警" v-if="!goodsForm.id">
+        <el-form-item label="库存预警" v-if="!goodsForm.id" style="display: none;">
           <el-input-number v-model="goodsForm.stock_warning" :min="0" />
         </el-form-item>
       </el-form>
@@ -270,7 +349,17 @@
           <span>{{ stockForm.goods_name }}</span>
         </el-form-item>
         <el-form-item label="规格">
-          <el-select v-model="stockForm.spec_id" style="width: 100%" @change="onSpecChange">
+          <!-- 固定规格（库存预警的补货）用纯文本 -->
+          <span v-if="stockForm.fixed">
+            {{ stockForm.spec_name }}: {{ stockForm.spec_value }}
+          </span>
+          <!-- 多规格（商品列表的库存调整）用下拉 -->
+          <el-select
+            v-else
+            v-model="stockForm.spec_id"
+            style="width: 100%"
+            @change="onSpecChange"
+          >
             <el-option
               v-for="spec in stockForm.specs"
               :key="spec.id"
@@ -330,7 +419,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   listCategories, createCategory, updateCategory, deleteCategory,
   listGoods, getGoodsDetail, createGoods, updateGoods, deleteGoods,
-  adjustStock, getLowStock
+  adjustStock, getLowStock,
+  listGoodsSpecs, createGoodsSpec, updateGoodsSpec, deleteGoodsSpec,
+  setSpecStockInfo
 } from '@/api/goods'
 import { useUserStore } from '@/stores/user'
 import { addToCart } from '@/api/cart'
@@ -340,6 +431,151 @@ const isAdmin = computed(() => userStore.userInfo?.role === 'admin')
 
 // 当前 Tab
 const activeTab = ref('list')
+
+// ============ 规格管理 ============
+const specFilterGoodsId = ref('')
+const specList = ref([])
+const specLoading = ref(false)
+const specDialogVisible = ref(false)
+const specForm = reactive({
+  id: '',
+  goods_id: '',
+  spec_name: '',
+  spec_value: '',
+  stock_num: 0,
+  warning_stock: 10,
+  // 编辑模式下保存原始值，用于判断是否变化
+  _origStockNum: 0,
+  _origWarningStock: 10
+})
+
+// 新增规格弹窗
+const addSpecDialogVisible = ref(false)
+const addSpecForm = reactive({
+  spec_name: '',
+  spec_value: '',
+  stock_num: 0,
+  warning_stock: 10
+})
+
+const resetAddSpecForm = () => {
+  addSpecForm.spec_name = ''
+  addSpecForm.spec_value = ''
+  addSpecForm.stock_num = 0
+  addSpecForm.warning_stock = 10
+}
+
+const handleAddSpec = () => {
+  if (!specFilterGoodsId.value) {
+    ElMessage.warning('请先选择商品')
+    return
+  }
+  resetAddSpecForm()
+  addSpecDialogVisible.value = true
+}
+
+const submitAddSpec = async () => {
+  if (!addSpecForm.spec_name || !addSpecForm.spec_value) {
+    ElMessage.warning('请填写规格名和规格值')
+    return
+  }
+  try {
+    // 1) 创建规格（只传规格名 + 规格值）
+    const createRes = await createGoodsSpec(specFilterGoodsId.value, {
+      spec_name: addSpecForm.spec_name,
+      spec_value: addSpecForm.spec_value
+    })
+    // 2) 后端若返回 spec_id，则用 setSpecStockInfo 设置库存与阈值
+    const newSpecId = createRes?.id || createRes?.data?.id
+    if (newSpecId) {
+      try {
+        await setSpecStockInfo(newSpecId, addSpecForm.stock_num, addSpecForm.warning_stock)
+      } catch (stockErr) {
+        console.warn('设置库存失败（不影响规格创建）:', stockErr)
+      }
+    }
+    ElMessage.success('规格新增成功')
+    addSpecDialogVisible.value = false
+    loadSpecList()
+  } catch (e) {
+    console.error('新增规格失败:', e)
+    ElMessage.error(e.response?.data?.detail || '新增规格失败')
+  }
+}
+
+const loadSpecList = async () => {
+  if (!specFilterGoodsId.value) {
+    specList.value = []
+    return
+  }
+  specLoading.value = true
+  try {
+    const res = await listGoodsSpecs(specFilterGoodsId.value)
+    specList.value = res.items || res.data?.items || []
+  } catch (e) {
+    console.error('加载规格失败:', e)
+    ElMessage.error('加载规格失败')
+  } finally {
+    specLoading.value = false
+  }
+}
+
+const openSpecDialog = (row) => {
+  // 弹窗只用于调整库存和阈值，规格名/规格值只读
+  const stockNum = row.stock?.stock_num ?? 0
+  const warningStock = row.stock?.warning_stock ?? 10
+  specForm.id = row.id
+  specForm.goods_id = row.goods_id
+  specForm.spec_name = row.spec_name
+  specForm.spec_value = row.spec_value
+  specForm.stock_num = stockNum
+  specForm.warning_stock = warningStock
+  specForm._origStockNum = stockNum
+  specForm._origWarningStock = warningStock
+  specDialogVisible.value = true
+}
+
+// 只保存库存/预警阈值
+const handleSaveStockOnly = async () => {
+  if (!specForm.id) {
+    ElMessage.warning('请先保存规格')
+    return
+  }
+  if (specForm.stock_num === specForm._origStockNum &&
+      specForm.warning_stock === specForm._origWarningStock) {
+    ElMessage.info('库存和阈值未变化，无需保存')
+    return
+  }
+  try {
+    await setSpecStockInfo(specForm.id, specForm.stock_num, specForm.warning_stock)
+    // 更新原始值
+    specForm._origStockNum = specForm.stock_num
+    specForm._origWarningStock = specForm.warning_stock
+    ElMessage.success('库存更新成功')
+    specDialogVisible.value = false
+    loadSpecList()
+  } catch (e) {
+    console.error('保存库存失败:', e)
+    ElMessage.error(e.response?.data?.detail || '保存库存失败')
+  }
+}
+
+const handleDeleteSpec = async (row) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除规格 "${row.spec_name}: ${row.spec_value}" 吗？该操作会同时删除对应库存。`,
+      '提示', { type: 'warning' }
+    )
+    await deleteGoodsSpec(row.id)
+    ElMessage.success('规格删除成功')
+    loadSpecList()
+  } catch (e) {
+    if (e !== 'cancel') {
+      console.error('删除规格失败:', e)
+      ElMessage.error('删除规格失败')
+    }
+  }
+}
 
 // ============ 商品列表 ============
 const loading = ref(false)
@@ -353,7 +589,7 @@ const searchForm = reactive({
 })
 const pagination = reactive({
   page: 1,
-  page_size: 10,
+  page_size: 5,
   total: 0
 })
 
@@ -658,11 +894,15 @@ const handleSaveStock = async () => {
 }
 
 const handleQuickReplenish = (row) => {
+  // 库存预警 Tab 的补货：规格固定为当前预警规格，不提供下拉选择
   Object.assign(stockForm, {
     spec_id: row.spec_id,
     goods_name: row.goods_name,
+    spec_name: row.spec_name || '',
+    spec_value: row.spec_value || '',
     current_stock: row.stock_num,
-    delta: row.warning_threshold * 5
+    delta: row.warning_threshold * 5,
+    specs: []
   })
   stockDialogVisible.value = true
 }
@@ -765,12 +1005,12 @@ const handleDeleteCategory = async (row) => {
 // ============ 库存预警 ============
 const lowStockLoading = ref(false)
 const lowStockList = ref([])
-const stockThreshold = ref('')
 
 const loadLowStock = async () => {
   lowStockLoading.value = true
   try {
-    const res = await getLowStock(stockThreshold.value ? Number(stockThreshold.value) : undefined)
+    // 后端按 stock_num <= warning_stock 过滤，此处不传自定义阈值
+    const res = await getLowStock()
     if (res.code === 200 || res.data) {
       lowStockList.value = res.items || res.data?.items || []
     }
@@ -785,6 +1025,7 @@ const loadLowStock = async () => {
 const handleTabChange = (tab) => {
   if (tab === 'list') loadGoodsList()
   else if (tab === 'category') loadCategories()
+  else if (tab === 'spec') loadGoodsList()
   else if (tab === 'stock') loadLowStock()
 }
 
@@ -836,5 +1077,17 @@ onMounted(() => {
   font-size: 12px;
   color: #999;
   margin-top: 4px;
+}
+.form-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 12px;
+}
+.form-section-tip {
+  font-size: 12px;
+  font-weight: normal;
+  color: #909399;
+  margin-left: 6px;
 }
 </style>

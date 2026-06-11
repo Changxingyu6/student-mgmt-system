@@ -4,9 +4,15 @@ import request from './request'
 export function getPay(payId) {
   return request({ url: `/pay_api/pay/${payId}`, method: 'get' })
 }
-// 查询用户的所有支付记录
-export function getUserPays(userId) {
-  return request({ url: `/pay_api/pay/user/${userId}`, method: 'get' })
+// 查询用户的所有支付记录（支持筛选）
+export function getUserPays(userId, filters = {}) {
+  const params = {}
+  if (filters.order_no) params.order_no = filters.order_no
+  if (filters.pay_status) params.pay_status = filters.pay_status
+  if (filters.pay_method) params.pay_method = filters.pay_method
+  if (filters.start_time) params.start_time = filters.start_time
+  if (filters.end_time) params.end_time = filters.end_time
+  return request({ url: `/pay_api/pay/user/${userId}`, method: 'get', params })
 }
 
 // 创建支付记录

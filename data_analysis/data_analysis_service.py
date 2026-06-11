@@ -44,12 +44,12 @@ def get_user_level_statistics(db: Session) -> Dict:
     """获取各用户等级的人数统计"""
     logger.debug("统计各用户等级人数")
     level_data = analysis_dao.count_users_by_level(db)
-
+    
     level_mapping = {'青铜会员': 0, '白银会员': 0, '黄金会员': 0}
     for item in level_data:
         if item["level"] in level_mapping:
             level_mapping[item["level"]] = item["count"]
-
+    
     return {
         "level_statistics": [
             {"level": "青铜会员", "count": level_mapping["青铜会员"]},
@@ -66,7 +66,7 @@ def get_top_selling_goods(db: Session, limit: int = 20) -> Dict:
     """获取销量前N的商品"""
     logger.debug(f"获取销量前{limit}的商品")
     goods_list = analysis_dao.get_top_selling_goods(db, limit)
-
+    
     return {
         "top_selling_goods": goods_list,
         "total_count": len(goods_list),
@@ -78,9 +78,9 @@ def get_category_statistics(db: Session) -> Dict:
     """获取各商品分类统计数据"""
     logger.debug("获取商品分类统计")
     category_list = analysis_dao.get_category_statistics(db)
-
+    
     total_goods = sum(item["goods_count"] for item in category_list)
-
+    
     return {
         "category_statistics": category_list,
         "total_categories": len(category_list),
@@ -90,46 +90,12 @@ def get_category_statistics(db: Session) -> Dict:
 
 
 def get_low_stock_goods(db: Session) -> Dict:
-    """获取库存低于预警值的商品（业务组装：避免表连接字符集问题）"""
+    """获取库存低于预警值的商品"""
     logger.debug("获取低库存商品")
-
-    # 1) 4 个简单查询（DAO 层）
-    on_sale_goods = analysis_dao.get_on_sale_goods(db)
-    all_specs = analysis_dao.get_all_specs(db)
-    all_stocks = analysis_dao.get_all_stocks(db)
-    all_categories = analysis_dao.get_all_categories(db)
-
-    # 2) 构造字典索引
-    stock_map = {s.spec_id: s for s in all_stocks}
-    category_map = {c.id: c.category_name for c in all_categories}
-
-    # 3) 按商品分组规格
-    specs_by_goods: Dict[str, list] = {}
-    for sp in all_specs:
-        specs_by_goods.setdefault(sp.goods_id, []).append(sp)
-
-    # 4) 业务组装：找出库存 < 预警值 的（商品, 规格, 库存）三元组
-    low_stock_list = []
-    for g in on_sale_goods:
-        warning_value = g.stock_warning if g.stock_warning is not None else 10
-        for sp in specs_by_goods.get(g.id, []):
-            stock = stock_map.get(sp.id)
-            if not stock:
-                continue
-            current_num = stock.stock_num if stock.stock_num is not None else 0
-            if current_num < warning_value:
-                low_stock_list.append({
-                    "goods_id": g.id,
-                    "goods_name": g.goods_name,
-                    "price": float(g.price) if g.price else 0,
-                    "stock_warning": int(warning_value),
-                    "current_stock": int(current_num),
-                    "category_name": category_map.get(g.category_id, ""),
-                    "stock_shortage": int(warning_value) - int(current_num)
-                })
-
+    low_stock_list = analysis_dao.get_low_stock_goods(db)
+    
     total_shortage = sum(item["stock_shortage"] for item in low_stock_list)
-
+    
     return {
         "low_stock_goods": low_stock_list,
         "total_low_stock": len(low_stock_list),
@@ -144,13 +110,13 @@ def get_order_statistics_by_period(db: Session, period: str = 'day') -> Dict:
     """按日/周/月统计订单数据"""
     logger.debug(f"按{period}统计订单数据")
     period_map = {'day': '日', 'week': '周', 'month': '月'}
-
+    
     statistics = analysis_dao.get_order_statistics_by_period(db, period)
-
+    
     total_orders = sum(item["total_orders"] for item in statistics)
     total_amount = sum(item["total_amount"] for item in statistics)
     avg_refund_ratio = sum(item["refund_ratio"] for item in statistics) / len(statistics) if statistics else 0
-
+    
     return {
         "period_type": period_map.get(period, period),
         "order_statistics": statistics,
@@ -165,10 +131,10 @@ def get_payment_method_statistics(db: Session) -> Dict:
     """获取各支付方式统计数据"""
     logger.debug("获取支付方式统计")
     payment_list = analysis_dao.get_payment_method_statistics(db)
-
+    
     total_orders = sum(item["order_count"] for item in payment_list)
     total_amount = sum(item["total_amount"] for item in payment_list)
-
+    
     return {
         "payment_statistics": payment_list,
         "total_orders": total_orders,
@@ -181,9 +147,9 @@ def get_overdue_unpaid_orders(db: Session, timeout_hours: int = 24) -> Dict:
     """获取未付款超时订单"""
     logger.debug(f"获取超过{timeout_hours}小时未付款的超时订单")
     overdue_list = analysis_dao.get_overdue_unpaid_orders(db, timeout_hours)
-
+    
     total_amount = sum(item["total_amount"] for item in overdue_list)
-
+    
     return {
         "overdue_orders": overdue_list,
         "total_overdue": len(overdue_list),
@@ -197,9 +163,9 @@ def get_long_time_unshipped_orders(db: Session, timeout_hours: int = 48) -> Dict
     """获取长时间未发货订单"""
     logger.debug(f"获取超过{timeout_hours}小时未发货的订单")
     unshipped_list = analysis_dao.get_long_time_unshipped_orders(db, timeout_hours)
-
+    
     total_amount = sum(item["total_amount"] for item in unshipped_list)
-
+    
     return {
         "unshipped_orders": unshipped_list,
         "total_unshipped": len(unshipped_list),
@@ -215,11 +181,11 @@ def get_coupon_statistics(db: Session) -> Dict:
     """获取优惠券统计数据"""
     logger.debug("获取优惠券统计")
     coupon_list = analysis_dao.get_coupon_statistics(db)
-
+    
     total_sent = sum(item["sent_count"] for item in coupon_list)
     total_used = sum(item["used_count"] for item in coupon_list)
     total_use_rate = round(total_used / total_sent * 100, 2) if total_sent > 0 else 0
-
+    
     return {
         "coupon_statistics": coupon_list,
         "total_coupons": len(coupon_list),
@@ -234,12 +200,12 @@ def get_activity_statistics(db: Session) -> Dict:
     """获取营销活动统计数据"""
     logger.debug("获取营销活动统计")
     activity_list = analysis_dao.get_activity_statistics(db)
-
+    
     # 统计进行中、未开始、已结束的活动数量
     ongoing_count = sum(1 for item in activity_list if item["status"] == "进行中")
     upcoming_count = sum(1 for item in activity_list if item["status"] == "未开始")
     ended_count = sum(1 for item in activity_list if item["status"] == "已结束")
-
+    
     return {
         "activity_statistics": activity_list,
         "total_activities": len(activity_list),

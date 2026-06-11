@@ -49,6 +49,14 @@ class SpecCreate(SpecBase):
     spec_value: str = Field(..., max_length=100)
     sort_order: int = 0
     stock_num: int = 0  # 该规格的初始库存
+    warning_stock: Optional[int] = 10  # 该规格的预警阈值
+
+
+class SpecUpdate(BaseModel):
+    """更新规格（所有字段可选）"""
+    spec_name: Optional[str] = Field(None, max_length=50)
+    spec_value: Optional[str] = Field(None, max_length=100)
+    sort_order: Optional[int] = None
 
 
 class SpecResponse(SpecBase):

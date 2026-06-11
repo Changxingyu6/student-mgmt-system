@@ -42,7 +42,7 @@ class UserCoupon(Base):
     coupon_id = Column(VARCHAR(50), ForeignKey('coupons.id'), nullable=False, comment='关联券ID')
     user_id = Column(VARCHAR(50), ForeignKey('users.id'), nullable=False, comment='关联用户ID')
     coupon_no = Column(String(50), nullable=False, comment='优惠券编号')
-    status = Column(Integer, nullable=False, default=0, comment='0未领取,1已领取,2已过期')
+    status = Column(Integer, nullable=False, default=0, comment='0未领取,1已领取,2已过期,3已使用')
     get_time = Column(DateTime, nullable=False, comment='领取时间')
     use_time = Column(DateTime, nullable=True, comment='使用时间')
     valid_end_time = Column(DateTime, nullable=False, comment='有效期结束时间')

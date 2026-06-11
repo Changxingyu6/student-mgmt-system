@@ -23,8 +23,8 @@ def get_user_addresses(db: Session, user_id: str) -> List[UserAddress]:
 def get_user_default_address(db: Session, user_id: str) -> Optional[UserAddress]:
     """获取用户默认地址"""
     return db.query(UserAddress).filter(
-        UserAddress.user_id == user_id, 
-        UserAddress.is_default == True
+        UserAddress.user_id == user_id,
+        UserAddress.is_default.is_(True)
     ).first()
 
 

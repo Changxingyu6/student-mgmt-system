@@ -3,20 +3,24 @@ import uuid
 from sqlalchemy.orm import Session
 from dao import goods_dao as dao
 from model.goods_model import Goods, GoodsSpec, GoodsStock
-from schema.goods_schema import GoodsCreate, GoodsUpdate, StockBase
+from schema.goods_schema import GoodsCreate, GoodsUpdate, StockBase, SpecCreate, SpecUpdate
 from model.goods_model import GoodsCategory
 
 # ========== 商品分类 Service ==========
 def create_category(db: Session, category_data: dict):
     category = GoodsCategory(**category_data)
-    return dao.create_category(db, category)
+    result = dao.create_category(db, category)
+    db.commit()
+    return result
 
 
 def update_category(db: Session, category_id: str, update_data: dict):
     category = dao.get_category_by_id(db, category_id)
     if not category:
         return None
-    return dao.update_category(db, category, update_data)
+    result = dao.update_category(db, category, update_data)
+    db.commit()
+    return result
 
 
 def delete_category(db: Session, category_id: str):
@@ -26,6 +30,7 @@ def delete_category(db: Session, category_id: str):
     if dao.has_goods_in_category(db, category_id):
         raise ValueError("该分类下存在商品，无法删除")
     dao.delete_category(db, category)
+    db.commit()
     return True
 
 
@@ -66,7 +71,7 @@ def create_goods(db: Session, goods_data: GoodsCreate):
             sort_order=spec_data.sort_order,
         )
         spec = dao.create_spec(db, spec)
-        
+
         # 创建该规格的库存
         stock = GoodsStock(
             id=str(uuid.uuid4()),
@@ -76,6 +81,7 @@ def create_goods(db: Session, goods_data: GoodsCreate):
         )
         dao.create_stock(db, stock)
 
+    db.commit()
     return goods
 
 
@@ -85,7 +91,9 @@ def update_goods(db: Session, goods_id: str, update_data: GoodsUpdate):
         return None
     # 过滤掉 None 值
     update_dict = {k: v for k, v in update_data.model_dump().items() if v is not None}
-    return dao.update_goods(db, goods, update_dict)
+    result = dao.update_goods(db, goods, update_dict)
+    db.commit()
+    return result
 
 
 def delete_goods(db: Session, goods_id: str):
@@ -93,6 +101,7 @@ def delete_goods(db: Session, goods_id: str):
     if not goods:
         return False
     dao.delete_goods(db, goods)
+    db.commit()
     return True
 
 
@@ -175,6 +184,7 @@ def update_stock(db: Session, spec_id: str, delta: int):
         raise ValueError("库存不足")
 
     dao.update_stock(db, stock, stock_num=new_stock)
+    db.commit()
     return True
 
 
@@ -193,3 +203,71 @@ def deduct_stock_by_spec(db: Session, spec_id: str, quantity: int):
     stock.stock_num -= quantity
     db.commit()
     return stock
+
+
+# ========== 规格管理 Service ==========
+def get_specs_by_goods_id(db: Session, goods_id: str):
+    """获取商品的所有规格"""
+    return dao.get_specs_by_goods_id(db, goods_id)
+
+
+def create_spec(db: Session, goods_id: str, spec_data: SpecCreate):
+    """为商品新增一个规格，并创建对应库存"""
+    goods = dao.get_goods_by_id(db, goods_id)
+    if not goods:
+        return None
+    spec = GoodsSpec(
+        id=str(uuid.uuid4()),
+        goods_id=goods_id,
+        spec_name=spec_data.spec_name,
+        spec_value=spec_data.spec_value,
+        sort_order=spec_data.sort_order,
+    )
+    spec = dao.create_spec(db, spec)
+    stock = GoodsStock(
+        id=str(uuid.uuid4()),
+        spec_id=spec.id,
+        stock_num=spec_data.stock_num,
+        warning_stock=spec_data.warning_stock or 10,
+    )
+    dao.create_stock(db, stock)
+    db.commit()
+    return spec
+
+
+def update_spec(db: Session, spec_id: str, spec_data: SpecUpdate):
+    """更新规格信息"""
+    spec = dao.get_spec_by_id(db, spec_id)
+    if not spec:
+        return None
+    update_dict = {k: v for k, v in spec_data.model_dump().items() if v is not None}
+    result = dao.update_spec(db, spec, update_dict)
+    db.commit()
+    return result
+
+
+def delete_spec(db: Session, spec_id: str):
+    """删除规格及其库存"""
+    spec = dao.get_spec_by_id(db, spec_id)
+    if not spec:
+        return False
+    stock = dao.get_stock_by_spec_id(db, spec_id)
+    if stock:
+        dao.delete_stock(db, stock)
+    dao.delete_spec(db, spec)
+    db.commit()
+    return True
+
+
+def set_stock_info(db: Session, spec_id: str, stock_num: int, warning_stock: int):
+    """直接设置规格的库存和预警阈值（绝对值覆盖）"""
+    if stock_num < 0:
+        raise ValueError("库存数不能小于 0")
+    if warning_stock < 0:
+        raise ValueError("预警阈值不能小于 0")
+    stock = dao.get_stock_by_spec_id(db, spec_id)
+    if not stock:
+        raise ValueError("规格库存不存在")
+    dao.update_stock(db, stock, stock_num=stock_num, warning_stock=warning_stock)
+    db.commit()
+    return True

@@ -24,11 +24,11 @@ class Payments(Base):
     pay_amount = Column(DECIMAL(10,2), nullable=False, comment="支付金额")
     pay_time = Column(DateTime, comment="支付时间")
     pay_method = Column(ENUM("余额"), nullable=False,default="余额")
-    is_abnormal = Column(ENUM("0","1"), default="0", comment="0正常1异常")
+    is_abnormal = Column(String(1), default="0", comment="0正常1异常")
     create_time = Column(DateTime, default=func.now() ,comment="审计字段")
     expire_time = Column(DateTime, comment="过期时间30分钟")
     update_time = Column(DateTime, default=func.now(), onupdate=func.now() ,comment="更新操作时间")
-    is_deleted = Column(ENUM("0","1"), default="0", comment="0正常1删除")
+    is_deleted = Column(String(1), default="0", comment="0正常1删除")
 
     __table_args__ = (
         Index('idx_order_id', order_id),          # 订单查询必加
@@ -51,8 +51,8 @@ class Refund(Base):
     refund_time = Column(DateTime)
     create_time = Column(DateTime, default=func.now())
     update_time = Column(DateTime, default=func.now(), onupdate=func.now(), comment="更新操作时间")
-    is_abnormal = Column(ENUM("0", "1"), default="0", comment="0正常1异常")
-    is_deleted = Column(ENUM("0", "1"), default="0", comment="0正常1删除")
+    is_abnormal = Column(String(1), default="0", comment="0正常1异常")
+    is_deleted = Column(String(1), default="0", comment="0正常1删除")
     __table_args__ = (
         Index('idx_after_sales_id', after_sales_id),  # 售后单查询
         Index('idx_refund_status', refund_status),    # 退款状态筛选
@@ -71,7 +71,7 @@ class Logistics(Base):
     track_info = Column(Text, nullable=True)
     create_time = Column(DateTime, default=func.now())
     update_time = Column(DateTime, default=func.now(), onupdate=func.now(), comment="更新操作时间")
-    is_deleted = Column(ENUM("0", "1"), default="0", comment="0正常1删除")
+    is_deleted = Column(String(1), default="0", comment="0正常1删除")
 
     __table_args__ = (
         Index('idx_order_id', order_id),                # 订单查物流
@@ -92,7 +92,7 @@ class Return_Logistics(Base):
     return_track_info = Column(Text, nullable=True)
     create_time = Column(DateTime, default=func.now())
     update_time = Column(DateTime, default=func.now(), onupdate=func.now(), comment="更新操作时间")
-    is_deleted = Column(ENUM("0", "1"), default="0", comment="0正常1删除")
+    is_deleted = Column(String(1), default="0", comment="0正常1删除")
     __table_args__ = (
         Index('idx_after_sales_id', after_sales_id),              # 售后单查退货物流
         Index('idx_return_logistics_status', return_logistics_status), # 退货状态筛选

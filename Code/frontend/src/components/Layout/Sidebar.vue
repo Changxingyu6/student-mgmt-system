@@ -32,6 +32,10 @@
         <el-icon><Tickets /></el-icon>
         <span>我的订单</span>
       </template>
+      <el-menu-item index="/orders">
+        <el-icon><Ticket /></el-icon>
+        <span>订单列表</span>
+      </el-menu-item>
       <el-menu-item index="/payments">
         <el-icon><Money /></el-icon>
         <span>我的支付</span>
@@ -39,14 +43,6 @@
       <el-menu-item index="/logistics">
         <el-icon><Van /></el-icon>
         <span>我的物流</span>
-      </el-menu-item>
-      <el-menu-item index="/refunds">
-        <el-icon><RefreshLeft /></el-icon>
-        <span>我的退款</span>
-      </el-menu-item>
-      <el-menu-item index="/return-logistics">
-        <el-icon><Box /></el-icon>
-        <span>我的退货物流</span>
       </el-menu-item>
       <el-menu-item index="/addresses">
         <el-icon><MapLocation /></el-icon>
@@ -72,6 +68,10 @@
         <el-icon><Document /></el-icon>
         <span>日志管理</span>
       </el-menu-item>
+      <el-menu-item index="/data-analysis">
+        <el-icon><TrendCharts /></el-icon>
+        <span>数据分析</span>
+      </el-menu-item>
     </el-sub-menu>
   </el-menu>
 </template>
@@ -80,7 +80,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { User, Lock, Document, MapLocation, ShoppingCart, Goods, Ticket, Money, Van, RefreshLeft, Box, Setting, Tickets } from '@element-plus/icons-vue'
+import { User, Lock, Document, MapLocation, ShoppingCart, Goods, Ticket, Money, Van, Setting, Tickets, TrendCharts } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const userStore = useUserStore()

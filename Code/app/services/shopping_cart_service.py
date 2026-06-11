@@ -7,6 +7,7 @@ from typing import Dict
 from fastapi import HTTPException
 from dao import shopping_cart_dao as cart_dao
 from dao import shopping_cart_item_dao as item_dao
+from dao import user_dao
 from model.goods_model import Goods, GoodsSpec
 from utils.logger import get_logger
 
@@ -39,6 +40,11 @@ def _get_item_details(db: Session, item: Dict) -> Dict:
 def get_cart_by_user(db: Session, user_id: str) -> Dict:
     """获取用户购物车"""
     logger.debug(f"获取用户购物车 - 用户ID: {user_id}")
+
+    # 从数据库查询用户是否存在
+    user = user_dao.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
 
     cart = cart_dao.get_cart_by_user_id(db, user_id)
     if not cart:
@@ -132,7 +138,7 @@ def delete_cart_item(db: Session, user_id: str, item_id: str) -> Dict:
 
 
 def get_cart_items(db: Session, user_id: str) -> Dict:
-    """获取购物车所有物品（供创建订单使用）"""
+    """获取购物车所有物品"""
     logger.debug(f"获取购物车所有物品 - 用户ID: {user_id}")
 
     cart = cart_dao.get_cart_by_user_id(db, user_id)
@@ -159,12 +165,16 @@ def calculate_selected_total(db: Session, user_id: str) -> Dict:
 
     selected_items = item_dao.get_checked_cart_items(db, cart.cart_id)
 
-    total_amount = 0
+    total_amount = 0.0
     for item in selected_items:
-        total_amount += item["buy_num"]
+        # 复用 _get_item_details 获取商品价格
+        details = _get_item_details(db, item)
+        buy_num = int(item.get("buy_num") or 0)
+        price = float(details.get("price") or 0)
+        total_amount += buy_num * price
 
     return {
-        "total_amount": total_amount,
+        "total_amount": round(total_amount, 2),
         "selected_count": len(selected_items),
         "cart_id": cart.cart_id
     }

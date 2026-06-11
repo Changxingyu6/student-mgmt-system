@@ -18,9 +18,19 @@ def pay_query_api(order_id: UUIDStr, db=Depends(get_db)):
     return result
 
 @router.get('/pay/user/{user_id}')
-def pay_query_by_user_id_api(user_id: UUIDStr, db=Depends(get_db)):
-    """查询用户的所有支付记录"""
-    result = pay_func.pay_query_by_user_id_func(user_id, db)
+def pay_query_by_user_id_api(
+    user_id: UUIDStr, 
+    order_no: str = None,
+    pay_status: str = None,
+    pay_method: str = None,
+    start_time: str = None,
+    end_time: str = None,
+    db=Depends(get_db)
+):
+    """查询用户的所有支付记录（支持筛选）"""
+    result = pay_func.pay_query_by_user_id_func(
+        user_id, db, order_no, pay_status, pay_method, start_time, end_time
+    )
     return format_response(data=result, message="获取用户支付记录成功")
 
 
@@ -43,12 +53,14 @@ def pay_process_api(pay_request: pay_request.PaymentRequest, db=Depends(get_db))
     3. 扣减余额
     4. 更新支付状态为支付成功
     5. 自动生成物流信息
+    6. 计算积分并升级会员等级
     """
     result = pay_func.process_payment(
         pay_id=pay_request.pay_id,
         user_id=pay_request.user_id,
         pay_password=pay_request.pay_password,
-        db=db
+        db=db,
+        coupon_id=pay_request.coupon_id
     )
     if result["success"]:
         return format_response(data=result["data"], message=result["message"])

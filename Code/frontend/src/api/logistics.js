@@ -16,7 +16,11 @@ export function createLogistics(data) {
 export function updateLogistics(data) {
   return request({ url: '/logistics_api/logistics', method: 'put', data })
 }
-// 删除物流
-export function deleteLogistics(logisticsId) {
-  return request({ url: `/logistics_api/logistics/${logisticsId}`, method: 'delete' })
+// 查询用户的所有物流记录
+export function getUserLogistics(userId) {
+  return request({ url: `/logistics_api/logistics/user/${userId}`, method: 'get' })
+}
+// 确认收货
+export function confirmReceipt(logisticsId) {
+  return request({ url: `/logistics_api/logistics/${logisticsId}/confirm`, method: 'put' })
 }

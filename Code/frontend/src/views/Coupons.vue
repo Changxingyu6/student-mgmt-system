@@ -5,7 +5,6 @@
     <el-tabs v-model="activeTab" @tab-change="handleTabChange">
       <el-tab-pane label="优惠券" name="coupon"></el-tab-pane>
       <el-tab-pane label="我的优惠券" name="userCoupon"></el-tab-pane>
-      <el-tab-pane v-if="isAdmin" label="营销活动" name="activity"></el-tab-pane>
       <el-tab-pane v-if="isAdmin" label="使用日志" name="useLog"></el-tab-pane>
     </el-tabs>
 
@@ -67,7 +66,7 @@
           v-model:current-page="couponPage.page"
           v-model:page-size="couponPage.page_size"
           :total="couponPage.total"
-          :page-sizes="[10, 20, 50]"
+          :page-sizes="[5, 10, 20, 50]"
           layout="total, sizes, prev, pager, next, jumper"
           @current-change="loadCoupons"
           @size-change="loadCoupons"
@@ -79,6 +78,16 @@
     <div v-show="activeTab === 'userCoupon'">
       <el-table :data="userCouponList" v-loading="userCouponLoading" border stripe>
         <el-table-column prop="coupon_no" label="券号" width="200" />
+        <el-table-column prop="coupons_name" label="名称" min-width="160" show-overflow-tooltip />
+        <el-table-column label="类型" width="100">
+          <template #default="{ row }">{{ couponTypeMap[row.type] || '-' }}</template>
+        </el-table-column>
+        <el-table-column label="面值" width="100">
+          <template #default="{ row }">¥{{ row.face_value || 0 }}</template>
+        </el-table-column>
+        <el-table-column label="使用门槛" width="120">
+          <template #default="{ row }">¥{{ row.min_spend || 0 }}</template>
+        </el-table-column>
         <el-table-column v-if="isAdmin" prop="user_id" label="用户ID" width="160" />
         <el-table-column prop="coupon_id" label="优惠券ID" width="160" />
         <el-table-column label="状态" width="100">
@@ -94,8 +103,10 @@
         <el-table-column label="使用时间" width="170">
           <template #default="{ row }">{{ formatDate(row.use_time) }}</template>
         </el-table-column>
-        <el-table-column label="有效期至" width="170">
-          <template #default="{ row }">{{ formatDate(row.valid_end_time) }}</template>
+        <el-table-column label="有效期" width="220">
+          <template #default="{ row }">
+            {{ formatDate(row.valid_start_time) }} ~ {{ formatDate(row.valid_end_time) }}
+          </template>
         </el-table-column>
         <el-table-column label="操作" width="80" fixed="right">
           <template #default="{ row }">
@@ -109,7 +120,7 @@
           v-model:current-page="userCouponPage.page"
           v-model:page-size="userCouponPage.page_size"
           :total="userCouponPage.total"
-          :page-sizes="[10, 20, 50]"
+          :page-sizes="[5, 10, 20, 50]"
           layout="total, sizes, prev, pager, next, jumper"
           @current-change="loadUserCoupons"
           @size-change="loadUserCoupons"
@@ -161,7 +172,7 @@
           v-model:current-page="activityPage.page"
           v-model:page-size="activityPage.page_size"
           :total="activityPage.total"
-          :page-sizes="[10, 20, 50]"
+          :page-sizes="[5, 10, 20, 50]"
           layout="total, sizes, prev, pager, next, jumper"
           @current-change="loadActivities"
           @size-change="loadActivities"
@@ -198,7 +209,7 @@
           v-model:current-page="useLogPage.page"
           v-model:page-size="useLogPage.page_size"
           :total="useLogPage.total"
-          :page-sizes="[10, 20, 50]"
+          :page-sizes="[5, 10, 20, 50]"
           layout="total, sizes, prev, pager, next, jumper"
           @current-change="loadUseLogs"
           @size-change="loadUseLogs"
@@ -309,12 +320,12 @@ const formatDate = (d) => d ? new Date(d).toLocaleString('zh-CN', { hour12: fals
 
 const couponTypeMap = { 1: '满减券', 2: '折扣券', 3: '无门槛' }
 const couponStatusMap = { 0: '下架', 1: '生效', 2: '过期' }
-const userCouponStatusMap = { 0: '未领取', 1: '已领取', 2: '已过期' }
+const userCouponStatusMap = { 0: '未领取', 1: '已领取', 2: '已过期', 3: '已使用' }
 
 // ============ 优惠券 ============
 const couponLoading = ref(false)
 const couponList = ref([])
-const couponPage = reactive({ page: 1, page_size: 10, total: 0 })
+const couponPage = reactive({ page: 1, page_size: 5, total: 0 })
 const couponSearch = reactive({ name: '', type: '' })
 const couponDialogVisible = ref(false)
 const couponForm = reactive({
@@ -416,7 +427,7 @@ const handleClaimCoupon = async (row) => {
 // ============ 用户优惠券 ============
 const userCouponLoading = ref(false)
 const userCouponList = ref([])
-const userCouponPage = reactive({ page: 1, page_size: 10, total: 0 })
+const userCouponPage = reactive({ page: 1, page_size: 5, total: 0 })
 
 const loadUserCoupons = async () => {
   userCouponLoading.value = true
@@ -453,7 +464,7 @@ const handleDeleteUserCoupon = async (row) => {
 // ============ 营销活动 ============
 const activityLoading = ref(false)
 const activityList = ref([])
-const activityPage = reactive({ page: 1, page_size: 10, total: 0 })
+const activityPage = reactive({ page: 1, page_size: 5, total: 0 })
 const activityDialogVisible = ref(false)
 const activityForm = reactive({
   id: '', activities_name: '', activities_type: '1',
@@ -521,7 +532,7 @@ const handleDeleteActivity = async (row) => {
 // ============ 使用日志 ============
 const useLogLoading = ref(false)
 const useLogList = ref([])
-const useLogPage = reactive({ page: 1, page_size: 10, total: 0 })
+const useLogPage = reactive({ page: 1, page_size: 5, total: 0 })
 
 const loadUseLogs = async () => {
   useLogLoading.value = true

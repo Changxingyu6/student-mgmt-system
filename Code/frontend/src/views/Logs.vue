@@ -30,7 +30,7 @@
       <el-pagination
         v-model:current-page="pagination.page"
         v-model:page-size="pagination.limit"
-        :page-sizes="[10, 20, 50, 100]"
+        :page-sizes="[5, 10, 20, 50]"
         :total="pagination.total"
         layout="total, sizes, prev, pager, next, jumper"
         @size-change="handleSizeChange"
@@ -49,7 +49,7 @@ const tableData = ref([])
 
 const pagination = reactive({
   page: 1,
-  limit: 10,
+  limit: 5,
   total: 0
 })
 

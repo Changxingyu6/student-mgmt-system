@@ -94,6 +94,16 @@ def create_specs_batch(db: Session, specs: list):
     return specs
 
 
+def update_spec(db: Session, spec: GoodsSpec, update_data: dict):
+    for key, value in update_data.items():
+        setattr(spec, key, value)
+    return spec
+
+
+def delete_spec(db: Session, spec: GoodsSpec):
+    db.delete(spec)
+
+
 def delete_specs_by_goods_id(db: Session, goods_id: str):
     db.query(GoodsSpec).filter(GoodsSpec.goods_id == goods_id).delete()
 
@@ -114,8 +124,19 @@ def create_stock(db: Session, stock: GoodsStock):
     return stock
 
 
-def update_stock(db: Session, stock: GoodsStock, stock_num: int):
-    stock.stock_num = stock_num
+def delete_stock(db: Session, stock: GoodsStock):
+    """删除库存记录"""
+    db.delete(stock)
+    return True
+
+
+def update_stock(db: Session, stock: GoodsStock, *args, **fields):
+    """更新库存字段：支持 update_stock(db, stock, new_num) 或 update_stock(db, stock, stock_num=..., warning_stock=...)"""
+    if args:
+        fields['stock_num'] = args[0]
+    for key, value in fields.items():
+        if value is not None:
+            setattr(stock, key, value)
     return stock
 
 
@@ -132,7 +153,12 @@ def deduct_stock(db: Session, goods_id: str, quantity: int):
 
 def get_low_stock_goods(db: Session, custom_threshold: int = None):
     """获取库存预警商品列表"""
-    query = db.query(GoodsStock, GoodsSpec, Goods).join(GoodsSpec).join(Goods)
+    query = (
+        db.query(GoodsStock, GoodsSpec, Goods)
+        .select_from(GoodsStock)
+        .join(GoodsSpec, GoodsSpec.id == GoodsStock.spec_id)
+        .join(Goods, Goods.id == GoodsSpec.goods_id)
+    )
     if custom_threshold is not None:
         query = query.filter(GoodsStock.stock_num <= custom_threshold)
     else:

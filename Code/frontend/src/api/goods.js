@@ -98,3 +98,47 @@ export function getLowStock(threshold) {
     params: threshold ? { custom_threshold: threshold } : {}
   })
 }
+
+// ============ 商品规格 ============
+// 获取商品规格列表
+export function listGoodsSpecs(goodsId) {
+  return request({
+    url: `/goods/${goodsId}/spec`,
+    method: 'get'
+  })
+}
+
+// 为商品新增规格
+export function createGoodsSpec(goodsId, data) {
+  return request({
+    url: `/goods/${goodsId}/spec`,
+    method: 'post',
+    data
+  })
+}
+
+// 更新规格
+export function updateGoodsSpec(specId, data) {
+  return request({
+    url: `/goods/spec/${specId}`,
+    method: 'put',
+    data
+  })
+}
+
+// 删除规格
+export function deleteGoodsSpec(specId) {
+  return request({
+    url: `/goods/spec/${specId}`,
+    method: 'delete'
+  })
+}
+
+// 直接设置规格库存和阈值（绝对值）
+export function setSpecStockInfo(specId, stockNum, warningStock) {
+  return request({
+    url: `/goods/spec/${specId}/stock-info`,
+    method: 'put',
+    params: { stock_num: stockNum, warning_stock: warningStock }
+  })
+}

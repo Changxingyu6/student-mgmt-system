@@ -5,7 +5,7 @@ from datetime import datetime
 
 
 class ShoppingCartItem(Base):
-    """购物车项表 ORM 模型"""
+    """购物车项表 """
     __tablename__ = "shopping_cart_item"
     
     item_id = Column(String(50), primary_key=True, comment="购物车项主键ID")

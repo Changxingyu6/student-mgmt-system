@@ -184,8 +184,13 @@ const handleCheckout = async () => {
     return
   }
   try {
-    const userId = userStore.userInfo?.id
-    const res = await createOrderFromCart(userId)
+    // 获取默认收货地址
+    const addressInfo = {
+      name: '默认收货人',
+      phone: '13800138000',
+      address: '默认收货地址'
+    }
+    const res = await createOrderFromCart(addressInfo)
     
     ElMessage.success('订单创建成功')
     loadCart()  // 刷新购物车
