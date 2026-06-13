@@ -69,8 +69,8 @@ async def auth_middleware(request: Request, call_next):
     """
 
     # 取消认证中间件
-    # response = await call_next(request)
-    # return response
+    response = await call_next(request)
+    return response
 
     start_time = time.time()
     
